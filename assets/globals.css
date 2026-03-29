@@ -1,0 +1,143 @@
+/* ── NewsPixie 自訂 CSS 變數 ──────────────────── */
+:root {
+  --np-accent: #9575CD;
+  --np-accent-glow: rgba(149, 117, 205, 0.18);
+  --np-surface: #1C1C1C;
+  --np-card: #242424;
+}
+
+/* ── 字型 ────────────────────────────────────── */
+.font-mono-label {
+  font-family: ui-monospace, 'Geist Mono', 'Fira Code', monospace;
+  letter-spacing: 0.05em;
+}
+
+/* ── Glow 效果 ───────────────────────────────── */
+.np-glow {
+  box-shadow: 0 0 0 1px var(--np-accent-glow), 0 0 16px var(--np-accent-glow);
+}
+
+.np-glow-border {
+  border-color: var(--np-accent) !important;
+  box-shadow: 0 0 12px var(--np-accent-glow);
+}
+
+/* ── 卡片 hover 效果 ─────────────────────────── */
+.np-news-card {
+  transition: border-color 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.np-news-card:hover {
+  border-color: var(--np-accent) !important;
+  box-shadow: 0 0 12px var(--np-accent-glow);
+  text-decoration: none;
+}
+
+.np-news-card .np-external-icon {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.np-news-card:hover .np-external-icon {
+  opacity: 1;
+}
+
+
+
+/* ── AI Briefing 卡片 ────────────────────────── */
+.np-briefing-card {
+  border-color: rgba(149, 117, 205, 0.3) !important;
+}
+
+.text-np-accent {
+  color: var(--np-accent) !important;
+}
+
+/* ── 主題圓點 ────────────────────────────────── */
+.np-topic-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── 語言顏色圓點 ────────────────────────────── */
+.np-lang-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* ── 顏色選擇按鈕 ────────────────────────────── */
+.np-color-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s;
+}
+
+.np-color-btn--active {
+  border-color: rgba(var(--v-theme-on-surface), 0.87);
+  transform: scale(1.15);
+}
+
+/* ── 滾動條隱藏 ───────────────────────────────── */
+.np-scroll-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.np-scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── 卡片 grid ────────────────────────────────── */
+.np-card-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 600px) {
+  .np-card-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── 旋轉動畫（刷新） ────────────────────────── */
+.rotate-animation {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ── 間距 utilities ───────────────────────────── */
+.tracking-widest { letter-spacing: 0.1em; }
+.tracking-wider { letter-spacing: 0.05em; }
+
+/* ── Vuetify 深色主題調整 ────────────────────── */
+.v-theme--dark .v-navigation-drawer {
+  background-color: #161616 !important;
+}
+
+.v-theme--dark .v-app-bar {
+  background-color: rgba(9, 9, 9, 0.8) !important;
+  backdrop-filter: blur(12px);
+}
+
+.v-theme--dark .v-card {
+  background-color: #1f1f1f;
+}
+
+.np-header .v-toolbar__content {
+  padding: 0 !important;
+}
