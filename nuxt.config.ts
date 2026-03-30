@@ -57,5 +57,9 @@ export default defineNuxtConfig({
     ],
   },
 
+  piniaPersistedstate: {
+    storage: 'localStorage',
+  },
+
   compatibilityDate: '2024-11-01',
 })
