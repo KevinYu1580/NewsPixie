@@ -13,9 +13,12 @@
 # testing
 /coverage
 
-# next.js
-/.next/
-/out/
+# nuxt.js
+/.nuxt
+/output/
+/.output
+
+
 
 # production
 /build
