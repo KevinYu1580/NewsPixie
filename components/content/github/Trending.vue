@@ -5,6 +5,7 @@ const props = defineProps<{
   repos: RepoItem[]
   isLoading: boolean
   isError: boolean
+  error: string | null
   repoCount: number
 }>()
 </script>
@@ -27,7 +28,7 @@ const props = defineProps<{
       type="error"
       variant="tonal"
       density="compact"
-      text="抓取趨勢 Repos 失敗，請稍後再試。"
+      :text="props.error ?? '抓取趨勢 Repos 失敗，請稍後再試。'"
     />
 
     <!-- 空狀態 -->

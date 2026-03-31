@@ -2,6 +2,12 @@
 import type { AnthropicModel } from '@/stores/settingsStore'
 import { MODEL_OPTIONS, useSettingsStore } from '@/stores/settingsStore'
 
+const props = withDefaults(defineProps<{
+  forceOpen?: boolean
+}>(), {
+  forceOpen: false,
+})
+
 const settingsStore = useSettingsStore()
 
 const dialog = ref(false)
@@ -18,8 +24,18 @@ function openDialog() {
 function handleSave() {
   settingsStore.setApiKey(keyInput.value.trim())
   saved.value = true
-  setTimeout(() => { saved.value = false }, 2000)
+  setTimeout(() => {
+    saved.value = false
+  }, 2000)
 }
+
+const dialogModel = computed({
+  get: () => props.forceOpen || dialog.value,
+  set: (value) => {
+    if (!props.forceOpen)
+      dialog.value = value
+  },
+})
 
 const maskedKey = computed(() => {
   const k = settingsStore.apiKey
@@ -31,10 +47,23 @@ const maskedKey = computed(() => {
 const canSave = computed(() =>
   !!keyInput.value.trim() && keyInput.value.trim() !== settingsStore.apiKey,
 )
+
+const showForceMessage = computed(() => props.forceOpen || !settingsStore.hasApiKey)
+
+watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
+  if (forceOpen) {
+    openDialog()
+    return
+  }
+
+  if (wasForceOpen && settingsStore.hasApiKey)
+    dialog.value = false
+}, { immediate: true })
 </script>
 
 <template>
   <v-btn
+    v-if="!forceOpen"
     icon="mdi-cog-outline"
     variant="text"
     size="small"
@@ -42,13 +71,20 @@ const canSave = computed(() =>
     @click="openDialog"
   />
 
-  <v-dialog v-model="dialog" max-width="400">
+  <v-dialog v-model="dialogModel" max-width="400">
     <v-card>
       <v-card-title class="font-mono-label text-sm tracking-widest text-uppercase pt-5 px-5">
         設定
       </v-card-title>
 
       <v-card-text class="px-5 pb-5">
+        <p
+          v-if="showForceMessage"
+          class="text-body-2 text-medium-emphasis mb-4"
+        >
+          NewsPixie 依賴 Anthropic AI，請先輸入 API Key 以開始使用。
+        </p>
+
         <!-- API Key -->
         <div class="mb-5">
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">

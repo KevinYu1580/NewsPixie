@@ -18,15 +18,15 @@ const {
   error,
   stageLabel,
   hasBriefing,
-  fetchedToday,
   run,
 } = useDailyBriefing(topicRef)
 
 const hasJinaUrls = computed(() => (props.topic.jinaUrls?.length ?? 0) > 0)
 
 const settingsStore = useSettingsStore()
+const hasApiKey = computed(() => settingsStore.hasApiKey)
 
-const { data: repos, isLoading: repoLoading, isError: repoError, cachedAt: repoCachedAt, refetch: refetchRepos } = useGithubTrending(topicRef)
+const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErrorMessage, cachedAt: repoCachedAt, refetch: refetchRepos } = useGithubTrending(topicRef)
 </script>
 
 <template>
@@ -44,8 +44,23 @@ const { data: repos, isLoading: repoLoading, isError: repoError, cachedAt: repoC
           {{ formatRelativeTime(generatedAt) }}
         </span>
 
+        <v-tooltip v-if="hasJinaUrls && !hasApiKey" location="top">
+          <template #activator="{ props: activatorProps }">
+            <span v-bind="activatorProps">
+              <v-btn
+                icon="mdi-refresh"
+                variant="text"
+                size="x-small"
+                :disabled="true"
+                aria-label="立即重新抓取"
+              />
+            </span>
+          </template>
+
+          <span>請先設定 API Key</span>
+        </v-tooltip>
         <v-btn
-          v-if="hasJinaUrls"
+          v-else-if="hasJinaUrls"
           icon="mdi-refresh"
           variant="text"
           size="x-small"
@@ -78,7 +93,23 @@ const { data: repos, isLoading: repoLoading, isError: repoError, cachedAt: repoC
         <span v-if="repoCachedAt" class="text-caption text-medium-emphasis">
           {{ formatRelativeTime(repoCachedAt) }}
         </span>
+        <v-tooltip v-if="!hasApiKey" location="top">
+          <template #activator="{ props: activatorProps }">
+            <span v-bind="activatorProps">
+              <v-btn
+                icon="mdi-refresh"
+                variant="text"
+                size="x-small"
+                :disabled="true"
+                aria-label="重新抓取趨勢 Repos"
+              />
+            </span>
+          </template>
+
+          <span>請先設定 API Key</span>
+        </v-tooltip>
         <v-btn
+          v-else
           icon="mdi-refresh"
           variant="text"
           size="x-small"
@@ -92,6 +123,7 @@ const { data: repos, isLoading: repoLoading, isError: repoError, cachedAt: repoC
         :repos="repos"
         :is-loading="repoLoading"
         :is-error="repoError"
+        :error="repoErrorMessage"
         :repo-count="settingsStore.repoCount"
       />
     </ContentSection>

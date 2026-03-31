@@ -42,6 +42,28 @@ function saveCache(data: DailyBriefingCache): void {
   pruneLocalStorageCache(CACHE_PREFIX, MAX_CACHE_DAYS)
 }
 
+function getErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== 'object')
+    return null
+
+  const err = error as {
+    statusMessage?: string
+    message?: string
+    data?: { statusMessage?: string, message?: string, error?: string }
+    response?: { _data?: { statusMessage?: string, message?: string, error?: string } }
+  }
+
+  return err.data?.statusMessage
+    ?? err.response?._data?.statusMessage
+    ?? err.data?.message
+    ?? err.response?._data?.message
+    ?? err.statusMessage
+    ?? err.data?.error
+    ?? err.response?._data?.error
+    ?? err.message
+    ?? null
+}
+
 /**
  * 完整 Daily Briefing pipeline：
  * 1. Jina 抓各來源首頁取得 raw markdown
@@ -82,6 +104,9 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
   }
 
   async function run() {
+    if (!settingsStore.hasApiKey)
+      return
+
     const t = topic.value
     if (!t || isLoading.value)
       return
@@ -143,7 +168,12 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
         })
 
       if (allArticles.length === 0) {
-        throw new Error('AI 未能從頁面內容中辨識出任何文章')
+        const extractError = extractResults
+          .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+          .map(r => getErrorMessage(r.reason))
+          .find(Boolean)
+
+        throw new Error(extractError ?? 'AI 未能從頁面內容中辨識出任何文章')
       }
 
       // Step 3：AI 精選 top N
@@ -173,7 +203,7 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
       })
     }
     catch (err) {
-      error.value = err instanceof Error ? err.message : '每日精選生成失敗'
+      error.value = getErrorMessage(err) ?? '每日精選生成失敗'
       stage.value = 'idle'
     }
     finally {

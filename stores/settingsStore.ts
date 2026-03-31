@@ -18,6 +18,7 @@ export const useSettingsStore = defineStore('settings', () => {
   const articleCount = ref(5)
   /** 每個主題顯示的 repo 數量 */
   const repoCount = ref(8)
+  const hasApiKey = computed(() => !!apiKey.value.trim())
 
   function setApiKey(key: string) {
     apiKey.value = key
@@ -50,6 +51,7 @@ export const useSettingsStore = defineStore('settings', () => {
     fetchTime,
     articleCount,
     repoCount,
+    hasApiKey,
     setApiKey,
     setModel,
     setMobileDrawer,

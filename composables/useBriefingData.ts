@@ -12,6 +12,28 @@ interface GithubTrendingCache {
   cachedAt: string
 }
 
+function getErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== 'object')
+    return null
+
+  const err = error as {
+    statusMessage?: string
+    message?: string
+    data?: { statusMessage?: string, message?: string, error?: string }
+    response?: { _data?: { statusMessage?: string, message?: string, error?: string } }
+  }
+
+  return err.data?.statusMessage
+    ?? err.response?._data?.statusMessage
+    ?? err.data?.message
+    ?? err.response?._data?.message
+    ?? err.statusMessage
+    ?? err.data?.error
+    ?? err.response?._data?.error
+    ?? err.message
+    ?? null
+}
+
 function todayStr(): string {
   return new Date().toISOString().split('T')[0]
 }
@@ -52,7 +74,7 @@ function pruneOldCache(): void {
     const parts = key.split('-')
     const dateStr = parts.at(-1)
     const date = new Date(dateStr!)
-    if (!isNaN(date.getTime())) {
+    if (!Number.isNaN(date.getTime())) {
       const diffDays = (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
       if (diffDays > MAX_CACHE_DAYS)
         keysToRemove.push(key)
@@ -64,8 +86,14 @@ function pruneOldCache(): void {
 async function fetchFromApi(query: string, limit: number): Promise<RepoItem[]> {
   const res = await fetch(`/api/github-trending?query=${encodeURIComponent(query)}&limit=${limit}`)
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }))
-    throw new Error((err as { error?: string }).error ?? `請求失敗: ${res.status}`)
+    const err = await res.json().catch(() => ({}))
+    throw new Error(
+      (err as { statusMessage?: string, message?: string, error?: string }).statusMessage
+      ?? (err as { statusMessage?: string, message?: string, error?: string }).message
+      ?? (err as { statusMessage?: string, message?: string, error?: string }).error
+      ?? res.statusText
+      ?? `請求失敗: ${res.status}`,
+    )
   }
   return res.json() as Promise<RepoItem[]>
 }
@@ -75,6 +103,7 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
   const data = ref<RepoItem[]>([])
   const isLoading = ref(false)
   const isError = ref(false)
+  const error = ref<string | null>(null)
   const cachedAt = ref('')
   const settingsStore = useSettingsStore()
 
@@ -91,6 +120,9 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
   }
 
   async function fetch_(forceRefresh = false) {
+    if (!settingsStore.hasApiKey)
+      return
+
     if (!topic.value)
       return
     if (!forceRefresh && loadFromCache())
@@ -98,6 +130,7 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
 
     isLoading.value = true
     isError.value = false
+    error.value = null
     try {
       const repos = await fetchFromApi(topic.value.githubQuery, settingsStore.repoCount)
 
@@ -114,7 +147,9 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
             },
           })
           const descMap = new Map(result.descriptions.map(d => [d.name, d.description]))
-          repos.forEach((r) => { r.description = descMap.get(r.name) ?? r.description })
+          repos.forEach((r) => {
+            r.description = descMap.get(r.name) ?? r.description
+          })
         }
         catch { /* 靜默失敗，保留原始 description */ }
       }
@@ -124,8 +159,9 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
       saveCache(topic.value.id, repos)
       cachedAt.value = now
     }
-    catch {
+    catch (err) {
       isError.value = true
+      error.value = getErrorMessage(err) ?? '抓取趨勢 Repos 失敗，請稍後再試。'
     }
     finally {
       isLoading.value = false
@@ -134,5 +170,5 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
 
   watch(topic, () => fetch_(), { immediate: true })
 
-  return { data, isLoading, isError, cachedAt, refetch: () => fetch_(true) }
+  return { data, isLoading, isError, error, cachedAt, refetch: () => fetch_(true) }
 }
