@@ -71,6 +71,11 @@ ${trimmedContent}
     return { articles }
   }
   catch (error) {
+    const isOverloaded
+      = (error as any)?.status === 529
+        || (error as any)?.error?.type === 'overloaded_error'
+    if (isOverloaded)
+      throw createError({ statusCode: 503, statusMessage: 'AI 服務暫時過載，請稍後重試' })
     const msg = error instanceof Error ? error.message : 'AI 文章提取失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }
