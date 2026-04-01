@@ -1,9 +1,9 @@
 import type { RepoItem } from '@/types/content'
 import type { Topic } from '@/types/topic'
+import { MAX_CACHE_DAYS } from '@/lib/constants'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 const CACHE_PREFIX = 'newspixie-github'
-const MAX_CACHE_DAYS = 3
 
 interface GithubTrendingCache {
   topicId: string
@@ -35,7 +35,11 @@ function getErrorMessage(error: unknown): string | null {
 }
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function cacheKey(topicId: string): string {
@@ -71,8 +75,7 @@ function pruneOldCache(): void {
     const key = localStorage.key(i)
     if (!key?.startsWith(CACHE_PREFIX))
       continue
-    const parts = key.split('-')
-    const dateStr = parts.at(-1)
+    const dateStr = key.slice(-10)
     const date = new Date(dateStr!)
     if (!Number.isNaN(date.getTime())) {
       const diffDays = (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)

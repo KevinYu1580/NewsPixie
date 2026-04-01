@@ -1,5 +1,8 @@
 import type { Topic } from '@/types/topic'
 
+// 快取保留天數
+export const MAX_CACHE_DAYS = 1
+
 export const DEFAULT_TOPICS: Topic[] = [
   {
     id: 'ai-ml',
