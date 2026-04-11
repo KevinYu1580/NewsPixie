@@ -18,7 +18,6 @@ const props = defineProps<{
         v-for="i in props.repoCount"
         :key="i"
         type="card"
-        height="100"
       />
     </div>
 

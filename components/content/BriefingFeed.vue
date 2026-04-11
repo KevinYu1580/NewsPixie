@@ -31,7 +31,7 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
 
 <template>
   <div class="d-flex flex-column ga-8">
-    <!-- 每日精選（Jina + AI） -->
+    <!-- 每日精選新聞（Jina + AI） -->
     <ContentSection
       title="每日精選"
       :count="articles?.length ?? 0"

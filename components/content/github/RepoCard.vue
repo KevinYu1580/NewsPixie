@@ -38,7 +38,7 @@ const [owner, name] = computed(() => props.repo.name.split('/')).value
 
       <!-- 說明 -->
       <p v-if="repo.description" class="text-caption text-medium-emphasis mb-3">
-        {{ truncate(repo.description, 80) }}
+        {{ truncate(repo.description, 100) }}
       </p>
 
       <!-- 統計 -->
