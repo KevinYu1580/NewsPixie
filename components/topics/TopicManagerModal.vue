@@ -229,7 +229,7 @@ function saveChanges() {
         </div>
       </v-card-text>
 
-      <v-card-actions class="justify-end px-5 pb-5 pt-0">
+      <v-card-actions v-if="mode === 'list'" class="justify-end px-5 pb-5 pt-0">
         <v-btn variant="text" @click="closeDialog">
           取消
         </v-btn>
