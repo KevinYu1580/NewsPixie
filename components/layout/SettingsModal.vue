@@ -12,21 +12,32 @@ const settingsStore = useSettingsStore()
 
 const dialog = ref(false)
 const keyInput = ref('')
+const localFetchTime = ref('')
+const localArticleCount = ref(5)
+const localRepoCount = ref(8)
+const localModel = ref<AnthropicModel>('claude-haiku-4-5-20251001')
 const showKey = ref(false)
-const saved = ref(false)
+
+function syncLocalSettings() {
+  keyInput.value = settingsStore.apiKey
+  localFetchTime.value = settingsStore.fetchTime
+  localArticleCount.value = settingsStore.articleCount
+  localRepoCount.value = settingsStore.repoCount
+  localModel.value = settingsStore.model
+}
 
 function openDialog() {
-  keyInput.value = settingsStore.apiKey
-  saved.value = false
+  syncLocalSettings()
   dialog.value = true
 }
 
 function handleSave() {
   settingsStore.setApiKey(keyInput.value.trim())
-  saved.value = true
-  setTimeout(() => {
-    saved.value = false
-  }, 2000)
+  settingsStore.setFetchTime(localFetchTime.value)
+  settingsStore.setArticleCount(Number(localArticleCount.value))
+  settingsStore.setRepoCount(Number(localRepoCount.value))
+  settingsStore.setModel(localModel.value)
+  dialog.value = false
 }
 
 const dialogModel = computed({
@@ -45,7 +56,7 @@ const maskedKey = computed(() => {
 })
 
 const canSave = computed(() =>
-  !!keyInput.value.trim() && keyInput.value.trim() !== settingsStore.apiKey,
+  !!keyInput.value.trim(),
 )
 
 const showForceMessage = computed(() => props.forceOpen || !settingsStore.hasApiKey)
@@ -103,7 +114,6 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
               hide-details
               aria-label="Anthropic API Key"
               class="flex-grow-1"
-              @update:model-value="saved = false"
             >
               <template #append-inner>
                 <v-btn
@@ -115,15 +125,6 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
                 />
               </template>
             </v-text-field>
-            <v-btn
-              :disabled="!canSave"
-              :prepend-icon="saved ? 'mdi-check-circle' : undefined"
-              variant="flat"
-              size="small"
-              @click="handleSave"
-            >
-              {{ saved ? '已儲存' : '儲存' }}
-            </v-btn>
           </div>
 
           <p
@@ -145,14 +146,13 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
             自動觸發時間
           </div>
           <v-text-field
-            :model-value="settingsStore.fetchTime"
+            v-model="localFetchTime"
             type="time"
             density="compact"
             variant="outlined"
             hide-details
             aria-label="每日自動觸發時間"
             class="mb-3"
-            @update:model-value="settingsStore.setFetchTime($event as string)"
           />
 
           <p
@@ -167,7 +167,7 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
                 精選篇數（4–10）
               </div>
               <v-text-field
-                :model-value="settingsStore.articleCount"
+                v-model.number="localArticleCount"
                 type="number"
                 min="4"
                 max="10"
@@ -175,7 +175,6 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
                 variant="outlined"
                 hide-details
                 aria-label="每主題精選文章數量"
-                @update:model-value="settingsStore.setArticleCount(Number($event))"
               />
             </div>
             <div class="flex-1-1">
@@ -183,7 +182,7 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
                 Repo 數（4–10）
               </div>
               <v-text-field
-                :model-value="settingsStore.repoCount"
+                v-model.number="localRepoCount"
                 type="number"
                 min="4"
                 max="10"
@@ -191,7 +190,6 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
                 variant="outlined"
                 hide-details
                 aria-label="每主題顯示 Repo 數量"
-                @update:model-value="settingsStore.setRepoCount(Number($event))"
               />
             </div>
           </div>
@@ -208,23 +206,23 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
             <v-card
               v-for="opt in MODEL_OPTIONS"
               :key="opt.value"
-              :variant="settingsStore.model === opt.value ? 'tonal' : 'outlined'"
-              :color="settingsStore.model === opt.value ? 'np-accent' : undefined"
+              :variant="localModel === opt.value ? 'tonal' : 'outlined'"
+              :color="localModel === opt.value ? 'np-accent' : undefined"
               class="cursor-pointer"
-              :aria-pressed="settingsStore.model === opt.value"
-              @click="settingsStore.setModel(opt.value as AnthropicModel)"
+              :aria-pressed="localModel === opt.value"
+              @click="localModel = opt.value as AnthropicModel"
             >
               <v-card-text class="d-flex align-start ga-3 pa-3">
                 <v-icon
-                  :icon="settingsStore.model === opt.value ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
-                  :color="settingsStore.model === opt.value ? 'np-accent' : 'medium-emphasis'"
+                  :icon="localModel === opt.value ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                  :color="localModel === opt.value ? 'np-accent' : 'medium-emphasis'"
                   size="small"
                   class="mt-0"
                 />
                 <div>
                   <div
                     class="text-body-2 font-weight-medium"
-                    :class="settingsStore.model === opt.value ? 'text-np-accent' : ''"
+                    :class="localModel === opt.value ? 'text-np-accent' : ''"
                   >
                     {{ opt.label }}
                   </div>
@@ -237,6 +235,23 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
           </div>
         </div>
       </v-card-text>
+
+      <v-card-actions class="justify-end px-5 pb-5 pt-0">
+        <v-btn
+          v-if="!forceOpen"
+          variant="text"
+          @click="dialog = false"
+        >
+          取消
+        </v-btn>
+        <v-btn
+          :disabled="!canSave"
+          variant="flat"
+          @click="handleSave"
+        >
+          儲存
+        </v-btn>
+      </v-card-actions>
     </v-card>
   </v-dialog>
 </template>
