@@ -7,8 +7,14 @@ const settingsStore = useSettingsStore()
 const theme = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)
 
+onMounted(() => {
+  theme.change(settingsStore.themeName)
+})
+
 function toggleTheme() {
-  theme.change(isDark.value ? 'light' : 'dark')
+  const nextTheme = isDark.value ? 'light' : 'dark'
+  settingsStore.setThemeName(nextTheme)
+  theme.change(nextTheme)
 }
 
 const briefingDate = formatBriefingDate()

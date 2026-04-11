@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 
 export type AnthropicModel = 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6' | 'claude-opus-4-6'
+export type ThemeName = 'dark' | 'light'
 
 export const MODEL_OPTIONS: { value: AnthropicModel, label: string, note: string }[] = [
   { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', note: '速度快、成本低（推薦）' },
@@ -11,6 +12,7 @@ export const MODEL_OPTIONS: { value: AnthropicModel, label: string, note: string
 export const useSettingsStore = defineStore('settings', () => {
   const apiKey = ref('')
   const model = ref<AnthropicModel>('claude-haiku-4-5-20251001')
+  const themeName = ref<ThemeName>('dark')
   const mobileDrawerOpen = ref(false)
   /** 每日自動觸發時間，格式 HH:MM */
   const fetchTime = ref('07:00')
@@ -26,6 +28,10 @@ export const useSettingsStore = defineStore('settings', () => {
 
   function setModel(m: AnthropicModel) {
     model.value = m
+  }
+
+  function setThemeName(name: ThemeName) {
+    themeName.value = name
   }
 
   function setMobileDrawer(open: boolean) {
@@ -47,6 +53,7 @@ export const useSettingsStore = defineStore('settings', () => {
   return {
     apiKey,
     model,
+    themeName,
     mobileDrawerOpen,
     fetchTime,
     articleCount,
@@ -54,6 +61,7 @@ export const useSettingsStore = defineStore('settings', () => {
     hasApiKey,
     setApiKey,
     setModel,
+    setThemeName,
     setMobileDrawer,
     setFetchTime,
     setArticleCount,
