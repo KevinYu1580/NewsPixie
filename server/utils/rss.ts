@@ -1,6 +1,6 @@
 import type { ContentSource, NewsItem } from '@/types/content'
 import { XMLParser } from 'fast-xml-parser'
-import { extractDomain, generateId } from '@/lib/utils'
+import { extractDomain, generateId } from '@/utils/utils'
 
 const parser = new XMLParser({
   ignoreAttributes: false,

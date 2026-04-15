@@ -1,4 +1,4 @@
-import { fetchGithubTrending } from '@/lib/api/github'
+import { fetchGithubTrending } from '@/server/utils/github'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)

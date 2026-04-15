@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { CuratedArticle } from '@/composables/useDailyBriefing'
 import type { NewsItem } from '@/types/content'
-import { SOURCE_CONFIG } from '@/lib/constants'
-import { formatNumber, formatRelativeTime, truncate } from '@/lib/utils'
+import { SOURCE_CONFIG } from '@/constants'
 
 const props = defineProps<{
   item?: NewsItem

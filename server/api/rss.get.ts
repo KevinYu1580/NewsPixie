@@ -1,4 +1,4 @@
-import { fetchRss } from '@/lib/api/rss';
+import { fetchRss } from '@/server/utils/rss'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);

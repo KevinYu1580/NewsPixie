@@ -1,7 +1,7 @@
 import type { Topic } from '@/types/topic'
 import { defineStore } from 'pinia'
-import { DEFAULT_TOPICS } from '@/lib/constants'
-import { generateId } from '@/lib/utils'
+import { DEFAULT_TOPICS } from '@/constants'
+import { generateId } from '@/utils/utils'
 
 export const useTopicsStore = defineStore('topics', () => {
   const topics = ref<Topic[]>(DEFAULT_TOPICS)
@@ -19,7 +19,7 @@ export const useTopicsStore = defineStore('topics', () => {
   function updateTopic(id: string, updates: Partial<Omit<Topic, 'id' | 'createdAt'>>) {
     const idx = topics.value.findIndex(t => t.id === id)
     if (idx !== -1) {
-      topics.value[idx] = { ...topics.value[idx], ...updates }
+      topics.value[idx] = { ...topics.value[idx]!, ...updates }
     }
   }
 

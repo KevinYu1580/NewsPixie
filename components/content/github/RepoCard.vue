@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RepoItem } from '@/types/content'
-import { formatNumber, truncate } from '@/lib/utils'
+import { formatNumber, truncate } from '@/utils/utils'
 
 const props = defineProps<{
   repo: RepoItem

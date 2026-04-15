@@ -56,7 +56,6 @@ const settingsStore = useSettingsStore()
 
     <!-- 空狀態（設定了來源但尚未觸發） -->
     <div v-else class="text-center py-6 text-medium-emphasis">
-      <v-icon icon="mdi-newspaper-variant-outline" size="40" class="mb-2 d-block" />
       <p class="text-body-2 mb-3">
         精選內容將於每日 {{ settingsStore.fetchTime }} 自動抓取
       </p>

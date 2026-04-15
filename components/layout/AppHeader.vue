@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
-import { formatBriefingDate } from '@/lib/utils'
+import { formatBriefingDate } from '@/utils/utils'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 const settingsStore = useSettingsStore()

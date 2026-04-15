@@ -2,8 +2,8 @@
 import type { Topic } from '@/types/topic'
 import { useGithubTrending } from '@/composables/useBriefingData'
 import { useDailyBriefing } from '@/composables/useDailyBriefing'
-import { formatRelativeTime } from '@/lib/utils'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { formatRelativeTime } from '@/utils/utils'
 
 const props = defineProps<{
   topic: Topic

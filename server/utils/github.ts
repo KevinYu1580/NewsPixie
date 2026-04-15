@@ -1,6 +1,6 @@
 import type { RepoItem } from '@/types/content'
-import { LANGUAGE_COLORS } from '@/lib/constants'
-import { generateId } from '@/lib/utils'
+import { LANGUAGE_COLORS } from '@/constants'
+import { generateId } from '@/utils/utils'
 
 const GH_API = 'https://api.github.com'
 
@@ -29,14 +29,9 @@ export async function fetchGithubTrending(query: string, limit = 8): Promise<Rep
   const q = encodeURIComponent(`${query} created:>${sevenDaysAgo}`)
   const url = `${GH_API}/search/repositories?q=${q}&sort=stars&order=desc&per_page=${limit}`
 
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github+json',
-  }
-  if (process.env.GITHUB_TOKEN) {
-    headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`
-  }
-
-  const res = await fetch(url, { headers })
+  const res = await fetch(url, {
+    headers: { Accept: 'application/vnd.github+json' },
+  })
 
   if (!res.ok)
     throw new Error(`GitHub 搜尋失敗: ${res.status}`)
@@ -52,6 +47,6 @@ export async function fetchGithubTrending(query: string, limit = 8): Promise<Rep
     languageColor: r.language ? LANGUAGE_COLORS[r.language] : undefined,
     stars: r.stargazers_count,
     forks: r.forks_count,
-    source: 'github',
+    source: 'github' as const,
   }))
 }
