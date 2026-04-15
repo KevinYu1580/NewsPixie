@@ -2,6 +2,7 @@ interface ExtractRequest {
   content: string
   apiKey?: string
   model?: string
+  provider?: string
 }
 
 const MAX_CONTENT_LENGTH = 8000
@@ -15,13 +16,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { content, apiKey: clientKey, model: clientModel } = body
+  const { content, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
 
   if (!content) {
     throw createError({ statusCode: 400, statusMessage: '缺少 content' })
   }
 
-  const { client, model } = createAnthropicClient(clientKey, clientModel)
+  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
 
   const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH)
 
@@ -40,13 +41,11 @@ ${trimmedContent}
 [{"title": "文章標題", "url": "https://..."}, ...]`
 
   try {
-    const message = await client.messages.create({
+    const text = await chat({
       model,
-      max_tokens: 1024,
+      maxTokens: 1024,
       messages: [{ role: 'user', content: prompt }],
     })
-
-    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
 
     let articles: { title: string, url: string }[]
     try {
@@ -71,11 +70,6 @@ ${trimmedContent}
     return { articles }
   }
   catch (error) {
-    const isOverloaded
-      = (error as any)?.status === 529
-        || (error as any)?.error?.type === 'overloaded_error'
-    if (isOverloaded)
-      throw createError({ statusCode: 503, statusMessage: 'AI 服務暫時過載，請稍後重試' })
     const msg = error instanceof Error ? error.message : 'AI 文章提取失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }

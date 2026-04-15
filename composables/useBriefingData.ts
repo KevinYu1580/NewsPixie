@@ -1,6 +1,6 @@
 import type { RepoItem } from '@/types/content'
 import type { Topic } from '@/types/topic'
-import { MAX_CACHE_DAYS } from '@/lib/constants'
+import { MAX_CACHE_DAYS } from '@/constants'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 const CACHE_PREFIX = 'newspixie-github'
@@ -138,15 +138,16 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
       const repos = await fetchFromApi(topic.value.githubQuery, settingsStore.repoCount)
 
       // AI 擴寫 description（有 API key 才執行，失敗不影響主流程）
-      if (settingsStore.apiKey) {
+      if (settingsStore.currentApiKey) {
         try {
           const result = await $fetch<{ descriptions: { name: string, description: string }[] }>('/api/ai-repo-describe', {
             method: 'POST',
             body: {
               topicName: topic.value.name,
               repos: repos.map(r => ({ name: r.name, description: r.description, language: r.language, stars: r.stars })),
-              apiKey: settingsStore.apiKey,
-              model: settingsStore.model,
+              apiKey: settingsStore.currentApiKey,
+              model: settingsStore.currentModel,
+              provider: settingsStore.provider,
             },
           })
           const descMap = new Map(result.descriptions.map(d => [d.name, d.description]))

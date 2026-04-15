@@ -40,15 +40,8 @@ export default defineNuxtConfig({
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],
-      link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
-      ],
+      link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
     },
-  },
-
-  runtimeConfig: {
-    anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
-    githubToken: process.env.GITHUB_TOKEN ?? '',
   },
 
   imports: {
@@ -62,6 +55,12 @@ export default defineNuxtConfig({
 
   piniaPersistedstate: {
     storage: 'localStorage',
+  },
+
+  runtimeConfig: {
+    public: {
+      encryptSecret: '',
+    },
   },
 
   compatibilityDate: '2024-11-01',

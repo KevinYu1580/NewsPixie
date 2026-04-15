@@ -1,17 +1,18 @@
 import { defineStore } from 'pinia'
+import type { AIModel, AIProvider, AnthropicModel, GeminiModel, OpenAIModel } from '@/types/ai'
+import { getEncryptStorage } from '@/plugins/encrypt-storage'
 
-export type AnthropicModel = 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6' | 'claude-opus-4-6'
+export type { AIProvider, AIModel, AnthropicModel, OpenAIModel, GeminiModel }
 export type ThemeName = 'dark' | 'light'
 
-export const MODEL_OPTIONS: { value: AnthropicModel, label: string, note: string }[] = [
-  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5', note: '速度快、成本低（推薦）' },
-  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6', note: '品質更高、速度適中' },
-  { value: 'claude-opus-4-6', label: 'Claude Opus 4.6', note: '最高品質、成本較高' },
-]
-
 export const useSettingsStore = defineStore('settings', () => {
-  const apiKey = ref('')
-  const model = ref<AnthropicModel>('claude-haiku-4-5-20251001')
+  const provider = ref<AIProvider>('anthropic')
+  const anthropicKey = ref('')
+  const openaiKey = ref('')
+  const geminiKey = ref('')
+  const anthropicModel = ref<AnthropicModel>('claude-haiku-4-5-20251001')
+  const openaiModel = ref<OpenAIModel>('gpt-4o-mini')
+  const geminiModel = ref<GeminiModel>('gemini-2.0-flash')
   const themeName = ref<ThemeName>('dark')
   const mobileDrawerOpen = ref(false)
   /** 每日自動觸發時間，格式 HH:MM */
@@ -20,14 +21,29 @@ export const useSettingsStore = defineStore('settings', () => {
   const articleCount = ref(5)
   /** 每個主題顯示的 repo 數量 */
   const repoCount = ref(8)
-  const hasApiKey = computed(() => !!apiKey.value.trim())
 
-  function setApiKey(key: string) {
-    apiKey.value = key
+  const currentApiKey = computed(() =>
+    ({ anthropic: anthropicKey, openai: openaiKey, gemini: geminiKey })[provider.value].value,
+  )
+  const currentModel = computed(() =>
+    ({ anthropic: anthropicModel, openai: openaiModel, gemini: geminiModel })[provider.value].value,
+  )
+  const hasApiKey = computed(() => !!currentApiKey.value.trim())
+
+  function setProvider(p: AIProvider) {
+    provider.value = p
   }
 
-  function setModel(m: AnthropicModel) {
-    model.value = m
+  function setProviderKey(p: AIProvider, key: string) {
+    if (p === 'anthropic') anthropicKey.value = key
+    else if (p === 'openai') openaiKey.value = key
+    else geminiKey.value = key
+  }
+
+  function setProviderModel(p: AIProvider, m: AIModel) {
+    if (p === 'anthropic') anthropicModel.value = m as AnthropicModel
+    else if (p === 'openai') openaiModel.value = m as OpenAIModel
+    else geminiModel.value = m as GeminiModel
   }
 
   function setThemeName(name: ThemeName) {
@@ -51,16 +67,24 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   return {
-    apiKey,
-    model,
+    provider,
+    anthropicKey,
+    openaiKey,
+    geminiKey,
+    anthropicModel,
+    openaiModel,
+    geminiModel,
     themeName,
     mobileDrawerOpen,
     fetchTime,
     articleCount,
     repoCount,
+    currentApiKey,
+    currentModel,
     hasApiKey,
-    setApiKey,
-    setModel,
+    setProvider,
+    setProviderKey,
+    setProviderModel,
     setThemeName,
     setMobileDrawer,
     setFetchTime,
@@ -68,5 +92,14 @@ export const useSettingsStore = defineStore('settings', () => {
     setRepoCount,
   }
 }, {
-  persist: { key: 'newspixie-settings' },
+  persist: {
+    key: 'newspixie-settings',
+    storage: import.meta.client
+      ? {
+          // lazy：每次讀寫才取 instance，確保 plugin 已初始化
+          getItem: key => getEncryptStorage()?.getItem<string>(key) ?? null,
+          setItem: (key, value) => getEncryptStorage()?.setItem(key, value),
+        }
+      : undefined,
+  },
 })

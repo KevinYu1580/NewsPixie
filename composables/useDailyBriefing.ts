@@ -1,6 +1,6 @@
 import type { Topic } from '@/types/topic'
-import { MAX_CACHE_DAYS } from '@/lib/constants'
-import { pruneLocalStorageCache, todayStr } from '@/lib/utils'
+import { MAX_CACHE_DAYS } from '@/constants'
+import { pruneLocalStorageCache, todayStr } from '@/utils/utils'
 import { useSettingsStore } from '@/stores/settingsStore'
 
 const CACHE_PREFIX = 'newspixie-daily'
@@ -147,8 +147,9 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
             method: 'POST',
             body: {
               content,
-              apiKey: settingsStore.apiKey,
-              model: settingsStore.model,
+              apiKey: settingsStore.currentApiKey,
+              model: settingsStore.currentModel,
+              provider: settingsStore.provider,
             },
           }),
         ),
@@ -185,8 +186,9 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
           keywords: t.keywords,
           articles: allArticles,
           count: settingsStore.articleCount,
-          apiKey: settingsStore.apiKey,
-          model: settingsStore.model,
+          apiKey: settingsStore.currentApiKey,
+          model: settingsStore.currentModel,
+          provider: settingsStore.provider,
         },
       })
 

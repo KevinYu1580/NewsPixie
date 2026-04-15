@@ -5,6 +5,7 @@ interface CurateRequest {
   count: number
   apiKey?: string
   model?: string
+  provider?: string
 }
 
 interface CuratedArticle {
@@ -21,13 +22,13 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { topicName, keywords, articles, count, apiKey: clientKey, model: clientModel } = body
+  const { topicName, keywords, articles, count, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
 
   if (!articles || articles.length === 0) {
     throw createError({ statusCode: 400, statusMessage: '缺少 articles' })
   }
 
-  const { client, model } = createAnthropicClient(clientKey, clientModel)
+  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
 
   const articleList = articles
     .map((a, i) => `${i + 1}. ${a.title}`)
@@ -49,13 +50,11 @@ ${articleList}
 [1, 3, 7]（代表第幾篇文章的編號）`
 
   try {
-    const message = await client.messages.create({
+    const text = await chat({
       model,
-      max_tokens: 200,
+      maxTokens: 200,
       messages: [{ role: 'user', content: prompt }],
     })
-
-    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
 
     let indices: number[]
     try {

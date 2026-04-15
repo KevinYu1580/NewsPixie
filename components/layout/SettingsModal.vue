@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import type { AnthropicModel } from '@/stores/settingsStore'
-import { MODEL_OPTIONS, useSettingsStore } from '@/stores/settingsStore'
+import type { AIModel, AIProvider } from '@/types/ai'
+import { useSettingsStore } from '@/stores/settingsStore'
+import { PROVIDER_CONFIGS } from '@/types/ai'
 
 const props = withDefaults(defineProps<{
   forceOpen?: boolean
@@ -11,19 +12,36 @@ const props = withDefaults(defineProps<{
 const settingsStore = useSettingsStore()
 
 const dialog = ref(false)
-const keyInput = ref('')
+const localProvider = ref<AIProvider>('anthropic')
+const localKeys = ref<Record<AIProvider, string>>({ anthropic: '', openai: '', gemini: '' })
+const localModels = ref<Record<AIProvider, AIModel>>({
+  anthropic: 'claude-haiku-4-5-20251001',
+  openai: 'gpt-4o-mini',
+  gemini: 'gemini-2.0-flash',
+})
 const localFetchTime = ref('')
 const localArticleCount = ref(5)
 const localRepoCount = ref(8)
-const localModel = ref<AnthropicModel>('claude-haiku-4-5-20251001')
 const showKey = ref(false)
 
+const providers = ['anthropic', 'openai', 'gemini'] as const
+
 function syncLocalSettings() {
-  keyInput.value = settingsStore.apiKey
+  localProvider.value = settingsStore.provider
+  localKeys.value = {
+    anthropic: settingsStore.anthropicKey,
+    openai: settingsStore.openaiKey,
+    gemini: settingsStore.geminiKey,
+  }
+  localModels.value = {
+    anthropic: settingsStore.anthropicModel,
+    openai: settingsStore.openaiModel,
+    gemini: settingsStore.geminiModel,
+  }
   localFetchTime.value = settingsStore.fetchTime
   localArticleCount.value = settingsStore.articleCount
   localRepoCount.value = settingsStore.repoCount
-  localModel.value = settingsStore.model
+  showKey.value = false
 }
 
 function openDialog() {
@@ -32,11 +50,14 @@ function openDialog() {
 }
 
 function handleSave() {
-  settingsStore.setApiKey(keyInput.value.trim())
+  settingsStore.setProvider(localProvider.value)
+  for (const p of providers) {
+    settingsStore.setProviderKey(p, localKeys.value[p].trim())
+    settingsStore.setProviderModel(p, localModels.value[p])
+  }
   settingsStore.setFetchTime(localFetchTime.value)
   settingsStore.setArticleCount(Number(localArticleCount.value))
   settingsStore.setRepoCount(Number(localRepoCount.value))
-  settingsStore.setModel(localModel.value)
   dialog.value = false
 }
 
@@ -48,16 +69,16 @@ const dialogModel = computed({
   },
 })
 
+const currentConfig = computed(() => PROVIDER_CONFIGS[localProvider.value])
+
 const maskedKey = computed(() => {
-  const k = settingsStore.apiKey
+  const k = ({ anthropic: settingsStore.anthropicKey, openai: settingsStore.openaiKey, gemini: settingsStore.geminiKey })[localProvider.value]
   if (!k)
     return ''
-  return `${k.slice(0, 8)}••••••••••••••••${k.slice(-4)}`
+  return `${k.slice(0, 6)}••••••••••••••••${k.slice(-4)}`
 })
 
-const canSave = computed(() =>
-  !!keyInput.value.trim(),
-)
+const canSave = computed(() => !!localKeys.value[localProvider.value].trim())
 
 const showForceMessage = computed(() => props.forceOpen || !settingsStore.hasApiKey)
 
@@ -66,7 +87,6 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
     openDialog()
     return
   }
-
   if (wasForceOpen && settingsStore.hasApiKey)
     dialog.value = false
 }, { immediate: true })
@@ -82,7 +102,7 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
     @click="openDialog"
   />
 
-  <v-dialog v-model="dialogModel" max-width="400">
+  <v-dialog v-model="dialogModel" max-width="420">
     <v-card>
       <v-card-title class="font-mono-label text-sm tracking-widest text-uppercase pt-5 px-5">
         設定
@@ -93,26 +113,54 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
           v-if="showForceMessage"
           class="text-body-2 text-medium-emphasis mb-4"
         >
-          NewsPixie 依賴 Anthropic AI，請先輸入 API Key 以開始使用。
+          NewsPixie 依賴 AI 服務，請先選擇 Provider 並輸入 API Key 以開始使用。
         </p>
+
+        <!-- Provider 選擇 -->
+        <div class="mb-5">
+          <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
+            AI Provider
+          </div>
+          <v-btn-toggle
+            v-model="localProvider"
+            mandatory
+            density="compact"
+            variant="outlined"
+            divided
+            color="np-accent"
+            class="w-100"
+          >
+            <v-btn
+              v-for="p in providers"
+              :key="p"
+              :value="p"
+              class="flex-1-1 text-caption"
+            >
+              {{ PROVIDER_CONFIGS[p].label }}
+            </v-btn>
+          </v-btn-toggle>
+        </div>
 
         <!-- API Key -->
         <div class="mb-5">
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-            Anthropic API Key
+            API Key
           </div>
-          <div v-if="settingsStore.apiKey" class="font-mono-label text-caption text-medium-emphasis mb-2">
+          <div
+            v-if="maskedKey"
+            class="font-mono-label text-caption text-medium-emphasis mb-2"
+          >
             目前：{{ maskedKey }}
           </div>
           <div class="d-flex align-center ga-2">
             <v-text-field
-              v-model="keyInput"
+              v-model="localKeys[localProvider]"
               :type="showKey ? 'text' : 'password'"
-              placeholder="sk-ant-..."
+              :placeholder="currentConfig.keyPlaceholder"
               density="compact"
               variant="outlined"
               hide-details
-              aria-label="Anthropic API Key"
+              :aria-label="`${currentConfig.label} API Key`"
               class="flex-grow-1"
             >
               <template #append-inner>
@@ -126,11 +174,8 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
               </template>
             </v-text-field>
           </div>
-
-          <p
-            class="text-body-small mt-2"
-          >
-            Key 儲存於瀏覽器 localStorage，不會傳送至任何第三方。
+          <p class="text-body-small mt-2">
+            Key 儲存於瀏覽器 localStorage並且經過加密(AES)，不會傳送至任何第三方。
           </p>
         </div>
 
@@ -155,9 +200,7 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
             class="mb-3"
           />
 
-          <p
-            class="text-body-small mt-2"
-          >
+          <p class="text-body-small mt-2">
             App 開啟後若已過觸發時間且當日尚未抓取，將自動執行一次。
           </p>
 
@@ -204,25 +247,25 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
           </div>
           <div class="d-flex flex-column ga-2">
             <v-card
-              v-for="opt in MODEL_OPTIONS"
+              v-for="opt in currentConfig.models"
               :key="opt.value"
-              :variant="localModel === opt.value ? 'tonal' : 'outlined'"
-              :color="localModel === opt.value ? 'np-accent' : undefined"
+              :variant="localModels[localProvider] === opt.value ? 'tonal' : 'outlined'"
+              :color="localModels[localProvider] === opt.value ? 'np-accent' : undefined"
               class="cursor-pointer"
-              :aria-pressed="localModel === opt.value"
-              @click="localModel = opt.value as AnthropicModel"
+              :aria-pressed="localModels[localProvider] === opt.value"
+              @click="localModels[localProvider] = opt.value"
             >
               <v-card-text class="d-flex align-start ga-3 pa-3">
                 <v-icon
-                  :icon="localModel === opt.value ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
-                  :color="localModel === opt.value ? 'np-accent' : 'medium-emphasis'"
+                  :icon="localModels[localProvider] === opt.value ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                  :color="localModels[localProvider] === opt.value ? 'np-accent' : 'medium-emphasis'"
                   size="small"
                   class="mt-0"
                 />
                 <div>
                   <div
                     class="text-body-2 font-weight-medium"
-                    :class="localModel === opt.value ? 'text-np-accent' : ''"
+                    :class="localModels[localProvider] === opt.value ? 'text-np-accent' : ''"
                   >
                     {{ opt.label }}
                   </div>

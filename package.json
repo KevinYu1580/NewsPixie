@@ -10,11 +10,11 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.80.0",
     "@mdi/font": "^7.4.47",
     "@pinia-plugin-persistedstate/nuxt": "^1.2.1",
     "@pinia/nuxt": "^0.11.3",
     "clsx": "^2.1.1",
+    "encrypt-storage": "^2.14.7",
     "fast-xml-parser": "^5.5.9",
     "nuxt": "^4.4.2",
     "pinia": "^3.0.4",

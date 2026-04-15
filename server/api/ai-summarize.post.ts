@@ -1,5 +1,3 @@
-import Anthropic from '@anthropic-ai/sdk'
-
 interface ArticleWithContent {
   title: string
   url: string
@@ -11,6 +9,7 @@ interface SummarizeRequest {
   articles: ArticleWithContent[]
   apiKey?: string
   model?: string
+  provider?: string
 }
 
 export interface SummarizedArticle {
@@ -18,12 +17,6 @@ export interface SummarizedArticle {
   url: string
   summary: string
 }
-
-const ALLOWED_MODELS = [
-  'claude-haiku-4-5-20251001',
-  'claude-sonnet-4-6',
-  'claude-opus-4-6',
-]
 
 export default defineEventHandler(async (event) => {
   let body: SummarizeRequest
@@ -34,30 +27,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { topicName, articles, apiKey: clientKey, model: clientModel } = body
+  const { topicName, articles, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
 
   if (!articles || articles.length === 0) {
     throw createError({ statusCode: 400, statusMessage: '缺少 articles' })
   }
 
-  const config = useRuntimeConfig()
-  const resolvedKey = clientKey?.trim() || config.anthropicApiKey
-
-  if (!resolvedKey) {
-    throw createError({
-      statusCode: 503,
-      statusMessage: '未設定 ANTHROPIC_API_KEY，請至右上角設定輸入 API Key',
-    })
-  }
-
-  const model = clientModel && ALLOWED_MODELS.includes(clientModel)
-    ? clientModel
-    : 'claude-haiku-4-5-20251001'
-
-  const client = new Anthropic({ apiKey: resolvedKey })
+  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
 
   const articlesText = articles.map((a, i) => {
-    const trimmedContent = a.content.slice(0, 2000) // 限制每篇長度，節省 token
+    const trimmedContent = a.content.slice(0, 2000)
     return `=== 文章 ${i + 1}：${a.title} ===\n${trimmedContent}`
   }).join('\n\n')
 
@@ -69,13 +48,11 @@ ${articlesText}
 ["文章1摘要", "文章2摘要", ...]`
 
   try {
-    const message = await client.messages.create({
+    const text = await chat({
       model,
-      max_tokens: 2048,
+      maxTokens: 2048,
       messages: [{ role: 'user', content: prompt }],
     })
-
-    const text = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
 
     let summaries: string[]
     try {
