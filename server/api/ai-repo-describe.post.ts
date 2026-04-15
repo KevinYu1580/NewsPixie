@@ -1,3 +1,5 @@
+import { calcDescribeMaxTokens } from '~/constants'
+
 interface RepoInput {
   name: string
   description: string
@@ -29,6 +31,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const maxTokens = calcDescribeMaxTokens(repos.length)
 
   const reposText = repos.map((r, i) => {
     const lang = r.language ? `語言：${r.language}，` : ''
@@ -45,7 +48,7 @@ ${reposText}
   try {
     const text = await chat({
       model,
-      maxTokens: 2048,
+      maxTokens,
       messages: [{ role: 'user', content: prompt }],
     })
 

@@ -1,11 +1,11 @@
+import { calcExtractMaxTokens, MAX_CONTENT_LENGTH } from '~/constants'
+
 interface ExtractRequest {
   content: string
   apiKey?: string
   model?: string
   provider?: string
 }
-
-const MAX_CONTENT_LENGTH = 8000
 
 export default defineEventHandler(async (event) => {
   let body: ExtractRequest
@@ -25,6 +25,7 @@ export default defineEventHandler(async (event) => {
   const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
 
   const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH)
+  const maxTokens = calcExtractMaxTokens(trimmedContent.length)
 
   const prompt = `以下是一個網頁的 Markdown 內容。請從中提取所有「新聞文章」或「部落格文章」的標題與 URL。
 
@@ -43,7 +44,7 @@ ${trimmedContent}
   try {
     const text = await chat({
       model,
-      maxTokens: 1024,
+      maxTokens,
       messages: [{ role: 'user', content: prompt }],
     })
 

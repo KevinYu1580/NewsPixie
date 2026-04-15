@@ -1,3 +1,5 @@
+import { calcSummarizeMaxTokens } from '~/constants'
+
 interface ArticleWithContent {
   title: string
   url: string
@@ -34,6 +36,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const maxTokens = calcSummarizeMaxTokens(articles.length)
 
   const articlesText = articles.map((a, i) => {
     const trimmedContent = a.content.slice(0, 2000)
@@ -50,7 +53,7 @@ ${articlesText}
   try {
     const text = await chat({
       model,
-      maxTokens: 2048,
+      maxTokens,
       messages: [{ role: 'user', content: prompt }],
     })
 
