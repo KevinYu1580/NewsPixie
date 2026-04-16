@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AIModel, AIProvider } from '@/types/ai'
+import type { AIProvider } from '@/types/ai'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { PROVIDER_CONFIGS } from '@/types/ai'
 
@@ -14,10 +14,10 @@ const settingsStore = useSettingsStore()
 const dialog = ref(false)
 const localProvider = ref<AIProvider>('anthropic')
 const localKeys = ref<Record<AIProvider, string>>({ anthropic: '', openai: '', gemini: '' })
-const localModels = ref<Record<AIProvider, AIModel>>({
+const localModels = ref<Record<AIProvider, string>>({
   anthropic: 'claude-haiku-4-5-20251001',
   openai: 'gpt-4o-mini',
-  gemini: 'gemini-2.0-flash',
+  gemini: 'gemini-3-flash-preview',
 })
 const localFetchTime = ref('')
 const localArticleCount = ref(5)
@@ -25,6 +25,48 @@ const localRepoCount = ref(8)
 const showKey = ref(false)
 
 const providers = ['anthropic', 'openai', 'gemini'] as const
+
+// 動態模型清單狀態
+const dynamicModels = ref<Record<AIProvider, { id: string, label: string }[]>>({
+  anthropic: [],
+  openai: [],
+  gemini: [],
+})
+const modelsLoading = ref<Record<AIProvider, boolean>>({
+  anthropic: false,
+  openai: false,
+  gemini: false,
+})
+const modelsError = ref<Record<AIProvider, string | null>>({
+  anthropic: null,
+  openai: null,
+  gemini: null,
+})
+
+async function fetchModels(provider: AIProvider, apiKey: string) {
+  if (!apiKey.trim())
+    return
+  modelsLoading.value[provider] = true
+  modelsError.value[provider] = null
+  try {
+    const res = await $fetch<{ models: { id: string, label: string }[] }>('/api/ai-models', {
+      method: 'POST',
+      body: { provider, apiKey: apiKey.trim() },
+    })
+    dynamicModels.value[provider] = res.models
+    const ids = res.models.map(m => m.id)
+    if (ids.length && !ids.includes(localModels.value[provider])) {
+      localModels.value[provider] = ids[0]
+    }
+  }
+  catch (e: unknown) {
+    const err = e as { data?: { statusMessage?: string }, message?: string }
+    modelsError.value[provider] = err?.data?.statusMessage || err?.message || '無法獲取模型清單'
+  }
+  finally {
+    modelsLoading.value[provider] = false
+  }
+}
 
 function syncLocalSettings() {
   localProvider.value = settingsStore.provider
@@ -42,7 +84,21 @@ function syncLocalSettings() {
   localArticleCount.value = settingsStore.articleCount
   localRepoCount.value = settingsStore.repoCount
   showKey.value = false
+
+  // 若已有 key，自動拉取模型清單
+  for (const p of providers) {
+    if (localKeys.value[p].trim()) {
+      fetchModels(p, localKeys.value[p])
+    }
+  }
 }
+
+// 切換 provider 時若已有 key 且尚未 fetch，自動觸發
+watch(localProvider, (p) => {
+  if (localKeys.value[p].trim() && !dynamicModels.value[p].length && !modelsLoading.value[p]) {
+    fetchModels(p, localKeys.value[p])
+  }
+})
 
 function openDialog() {
   syncLocalSettings()
@@ -121,23 +177,38 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
             AI Provider
           </div>
+
           <v-btn-toggle
             v-model="localProvider"
             mandatory
+
             density="compact"
             variant="outlined"
-            divided
+
             color="np-accent"
             class="w-100"
           >
-            <v-btn
-              v-for="p in providers"
-              :key="p"
-              :value="p"
-              class="flex-1-1 text-caption"
-            >
-              {{ PROVIDER_CONFIGS[p].label }}
+            <v-btn variant="text" value="anthropic" class=" ">
+              {{ PROVIDER_CONFIGS.anthropic.label }}
             </v-btn>
+            <v-tooltip text="尚未開放" location="top">
+              <template #activator="{ props: ttProps }">
+                <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
+                  <v-btn variant="text" value="openai" class=" " disabled>
+                    {{ PROVIDER_CONFIGS.openai.label }}
+                  </v-btn>
+                </span>
+              </template>
+            </v-tooltip>
+            <v-tooltip text="尚未開放" location="top">
+              <template #activator="{ props: ttProps }">
+                <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
+                  <v-btn variant="text" value="gemini" class="" disabled>
+                    {{ PROVIDER_CONFIGS.gemini.label }}
+                  </v-btn>
+                </span>
+              </template>
+            </v-tooltip>
           </v-btn-toggle>
         </div>
 
@@ -162,6 +233,7 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
               hide-details
               :aria-label="`${currentConfig.label} API Key`"
               class="flex-grow-1"
+              @blur="fetchModels(localProvider, localKeys[localProvider])"
             >
               <template #append-inner>
                 <v-btn
@@ -242,39 +314,82 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
 
         <!-- 模型選擇 -->
         <div>
-          <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-            AI 摘要模型
+          <div class="d-flex align-center justify-space-between mb-2">
+            <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis">
+              AI 摘要模型
+            </div>
+            <v-btn
+              v-if="localKeys[localProvider]?.trim()"
+              :loading="modelsLoading[localProvider]"
+              icon="mdi-refresh"
+              variant="text"
+              size="x-small"
+              aria-label="重新整理模型清單"
+              @click="fetchModels(localProvider, localKeys[localProvider])"
+            />
           </div>
           <div class="d-flex flex-column ga-2">
-            <v-card
-              v-for="opt in currentConfig.models"
-              :key="opt.value"
-              :variant="localModels[localProvider] === opt.value ? 'tonal' : 'outlined'"
-              :color="localModels[localProvider] === opt.value ? 'np-accent' : undefined"
-              class="cursor-pointer"
-              :aria-pressed="localModels[localProvider] === opt.value"
-              @click="localModels[localProvider] = opt.value"
+            <!-- 載入中 -->
+            <template v-if="modelsLoading[localProvider]">
+              <v-skeleton-loader
+                v-for="i in 3"
+                :key="i"
+                type="list-item-two-line"
+                class="rounded"
+              />
+            </template>
+
+            <!-- 錯誤 -->
+            <v-alert
+              v-else-if="modelsError[localProvider]"
+              type="error"
+              density="compact"
+              variant="tonal"
             >
-              <v-card-text class="d-flex align-start ga-3 pa-3">
-                <v-icon
-                  :icon="localModels[localProvider] === opt.value ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
-                  :color="localModels[localProvider] === opt.value ? 'np-accent' : 'medium-emphasis'"
+              <div class="d-flex align-center justify-space-between">
+                <span class="text-body-2">{{ modelsError[localProvider] }}</span>
+                <v-btn
                   size="small"
-                  class="mt-0"
-                />
-                <div>
-                  <div
-                    class="text-body-2 font-weight-medium"
-                    :class="localModels[localProvider] === opt.value ? 'text-np-accent' : ''"
-                  >
-                    {{ opt.label }}
+                  variant="text"
+                  @click="fetchModels(localProvider, localKeys[localProvider])"
+                >
+                  重試
+                </v-btn>
+              </div>
+            </v-alert>
+
+            <!-- 未輸入 key -->
+            <p
+              v-else-if="!localKeys[localProvider]?.trim()"
+              class="text-body-2 text-medium-emphasis"
+            >
+              請先輸入 API Key 以載入可用模型
+            </p>
+
+            <!-- 動態模型卡片 -->
+            <template v-else>
+              <v-card
+                v-for="m in dynamicModels[localProvider]"
+                :key="m.id"
+                :variant="localModels[localProvider] === m.id ? 'tonal' : 'outlined'"
+                :color="localModels[localProvider] === m.id ? 'np-accent' : undefined"
+                class="cursor-pointer"
+                :aria-pressed="localModels[localProvider] === m.id"
+                @click="localModels[localProvider] = m.id"
+              >
+                <v-card-text class="d-flex align-start ga-3 pa-3">
+                  <v-icon
+                    :icon="localModels[localProvider] === m.id ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                    :color="localModels[localProvider] === m.id ? 'np-accent' : 'medium-emphasis'"
+                    size="small"
+                    class="mt-0"
+                  />
+                  <div class="text-body-2 font-weight-medium" :class="localModels[localProvider] === m.id ? 'text-np-accent' : ''">
+                    {{ m.label }}
                   </div>
-                  <div class="text-caption text-medium-emphasis">
-                    {{ opt.note }}
-                  </div>
-                </div>
-              </v-card-text>
-            </v-card>
+                </v-card-text>
+              </v-card>
+            </template>
           </div>
         </div>
       </v-card-text>
