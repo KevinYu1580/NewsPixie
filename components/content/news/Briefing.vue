@@ -24,7 +24,9 @@ const settingsStore = useSettingsStore()
         <v-progress-circular size="14" width="2" indeterminate color="np-accent" />
         {{ props.stageLabel }}
       </div>
-      <v-skeleton-loader v-for="i in props.articleCount" :key="i" type="article" class="np-news-card" />
+      <div class="np-card-grid">
+        <v-skeleton-loader v-for="i in props.articleCount" :key="i" type="article" class="np-news-card" />
+      </div>
     </div>
 
     <!-- 錯誤 -->
@@ -46,7 +48,7 @@ const settingsStore = useSettingsStore()
     />
 
     <!-- 精選文章清單 -->
-    <div v-else-if="props.hasBriefing" class="d-flex flex-column ga-3">
+    <div v-else-if="props.hasBriefing" class="np-card-grid">
       <ContentNewsCard
         v-for="article in props.articles"
         :key="article.url"

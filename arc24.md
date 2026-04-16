@@ -29,6 +29,7 @@
    - 7.7 [POST /api/ai-summarize](#77-post-apiai-summarize)
    - 7.8 [POST /api/ai-briefing](#78-post-apiai-briefing)
    - 7.9 [POST /api/ai-repo-describe](#79-post-apiai-repo-describe)
+   - 7.10 [GET /api/og-image](#710-get-apiog-image)
 8. [UI 組件樹](#8-ui-組件樹)
    - 8.1 [Layout 層](#81-layout-層)
    - 8.2 [Content 層](#82-content-層)
@@ -202,6 +203,7 @@ interface RepoItem {
 interface CuratedArticle {
   title: string
   url: string
+  imageUrl?: string  // OG image，Step 4 平行抓取，可能為 undefined
 }
 
 interface DailyBriefingCache {
@@ -473,6 +475,20 @@ RSS feed 來源探索端點（預留功能）。
 
 由 [useGithubTrending](#62-usegithubtrending) 在資料抓取後以靜默方式呼叫，失敗不影響主流程。
 
+### 7.10 GET /api/og-image
+
+```
+?url=<article URL>
+```
+
+只抓前 16KB HTML，解析 `og:image` / `twitter:image` meta tag，回傳：
+
+```json
+{ "imageUrl": "https://..." }
+```
+
+`imageUrl` 可為 `null`（找不到時）。由 [useDailyBriefing](#61-usedailybriefing) Step 4 對每篇精選文章平行呼叫，失敗靜默降級（article 仍保留，只是無圖）。
+
 ---
 
 ## 8. UI 組件樹
@@ -570,6 +586,15 @@ TopicsTopicManagerModal
 │  │       └─> { selected: [{title,url}] }   │                   │
 │  └─────────────────────────────────────────┘                   │
 │                     │                                           │
+│  Stage 4: fetching OG images                                    │
+│  ┌─────────────────────────────────────────┐                   │
+│  │ selected (parallel)                     │                   │
+│  │   └─> GET /api/og-image?url=...         │                   │
+│  │       └─> fetch HTML head → og:image    │                   │
+│  │           └─> { imageUrl: string|null } │                   │
+│  │ 失敗靜默降級，保留 article 但無 imageUrl  │                   │
+│  └─────────────────────────────────────────┘                   │
+│                     │ withImages[]                              │
 │  saveCache() → localStorage                                     │
 └─────────────────────────────────────────────────────────────────┘
 ```

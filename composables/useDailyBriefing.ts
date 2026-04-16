@@ -8,6 +8,7 @@ const CACHE_PREFIX = 'newspixie-daily'
 export interface CuratedArticle {
   title: string
   url: string
+  imageUrl?: string
 }
 
 export interface DailyBriefingCache {
@@ -192,15 +193,30 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
         },
       })
 
+      // Step 4：平行抓各精選文章的 OG image（失敗靜默降級）
+      const withImages = await Promise.all(
+        curateResult.selected.map(async (article) => {
+          try {
+            const og = await $fetch<{ imageUrl: string | null }>('/api/og-image', {
+              query: { url: article.url },
+            })
+            return { ...article, imageUrl: og.imageUrl ?? undefined }
+          }
+          catch {
+            return article
+          }
+        }),
+      )
+
       const now = new Date().toISOString()
-      articles.value = curateResult.selected
+      articles.value = withImages
       generatedAt.value = now
       stage.value = 'done'
 
       saveCache({
         topicId: t.id,
         date: todayStr(),
-        articles: curateResult.selected,
+        articles: withImages,
         generatedAt: now,
       })
     }
