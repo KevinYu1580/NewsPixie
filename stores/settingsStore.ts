@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import type { AIModel, AIProvider, AnthropicModel, GeminiModel, OpenAIModel } from '@/types/ai'
+import type { AIModel, AIProvider } from '@/types/ai'
 import { getEncryptStorage } from '@/plugins/encrypt-storage'
 
-export type { AIProvider, AIModel, AnthropicModel, OpenAIModel, GeminiModel }
+export type { AIProvider, AIModel }
 export type ThemeName = 'dark' | 'light'
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -10,9 +10,9 @@ export const useSettingsStore = defineStore('settings', () => {
   const anthropicKey = ref('')
   const openaiKey = ref('')
   const geminiKey = ref('')
-  const anthropicModel = ref<AnthropicModel>('claude-haiku-4-5-20251001')
-  const openaiModel = ref<OpenAIModel>('gpt-4o-mini')
-  const geminiModel = ref<GeminiModel>('gemini-2.0-flash')
+  const anthropicModel = ref<string>('claude-haiku-4-5-20251001')
+  const openaiModel = ref<string>('gpt-4o-mini')
+  const geminiModel = ref<string>('gemini-3-flash-preview')
   const themeName = ref<ThemeName>('dark')
   const mobileDrawerOpen = ref(false)
   /** 每日自動觸發時間，格式 HH:MM */
@@ -41,9 +41,9 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   function setProviderModel(p: AIProvider, m: AIModel) {
-    if (p === 'anthropic') anthropicModel.value = m as AnthropicModel
-    else if (p === 'openai') openaiModel.value = m as OpenAIModel
-    else geminiModel.value = m as GeminiModel
+    if (p === 'anthropic') anthropicModel.value = m
+    else if (p === 'openai') openaiModel.value = m
+    else geminiModel.value = m
   }
 
   function setThemeName(name: ThemeName) {

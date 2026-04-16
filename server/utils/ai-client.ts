@@ -6,16 +6,10 @@ interface ChatParams {
   messages: { role: 'user' | 'assistant', content: string }[]
 }
 
-const ALLOWED_MODELS: Record<AIProvider, string[]> = {
-  anthropic: ['claude-haiku-4-5-20251001', 'claude-sonnet-4-6', 'claude-opus-4-6'],
-  openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-4.1'],
-  gemini: ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro'],
-}
-
 const DEFAULT_MODELS: Record<AIProvider, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
   openai: 'gpt-4o-mini',
-  gemini: 'gemini-2.0-flash',
+  gemini: 'gemini-3-flash-preview',
 }
 
 export function createAIClient(
@@ -35,9 +29,7 @@ export function createAIClient(
     ? (clientProvider as AIProvider)
     : 'anthropic'
 
-  const model = clientModel && ALLOWED_MODELS[provider].includes(clientModel)
-    ? clientModel
-    : DEFAULT_MODELS[provider]
+  const model = clientModel?.trim() || DEFAULT_MODELS[provider]
 
   async function chat({ model: m, maxTokens, messages }: ChatParams): Promise<string> {
     if (provider === 'anthropic') {

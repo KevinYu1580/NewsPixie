@@ -1,14 +1,11 @@
 export type AIProvider = 'anthropic' | 'openai' | 'gemini'
 
-export type AnthropicModel = 'claude-haiku-4-5-20251001' | 'claude-sonnet-4-6' | 'claude-opus-4-6'
-export type OpenAIModel = 'gpt-4o-mini' | 'gpt-4o' | 'gpt-4.1'
-export type GeminiModel = 'gemini-2.0-flash' | 'gemini-2.5-flash' | 'gemini-2.5-pro'
-export type AIModel = AnthropicModel | OpenAIModel | GeminiModel
+export type AIModel = string
 
 export interface ProviderModelOption {
-  value: AIModel
+  value: string
   label: string
-  note: string
+  note?: string
 }
 
 export interface ProviderConfig {
@@ -42,11 +39,7 @@ export const PROVIDER_CONFIGS: Record<AIProvider, ProviderConfig> = {
   gemini: {
     label: 'Google Gemini',
     keyPlaceholder: 'AIza...',
-    defaultModel: 'gemini-2.0-flash',
-    models: [
-      { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', note: '速度快、成本低（推薦）' },
-      { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash', note: '品質更高' },
-      { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', note: '最高品質' },
-    ],
+    defaultModel: 'gemini-3-flash-preview',
+    models: [],
   },
 }
