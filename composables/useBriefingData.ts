@@ -174,5 +174,10 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
 
   watch(topic, () => fetch_(), { immediate: true })
 
+  watch(() => settingsStore.hasApiKey, (hasKey) => {
+    if (hasKey)
+      fetch_()
+  })
+
   return { data, isLoading, isError, error, cachedAt, refetch: () => fetch_(true) }
 }

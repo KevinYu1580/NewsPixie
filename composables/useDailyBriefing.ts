@@ -229,29 +229,28 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
     }
   }
 
-  /** App 開啟時自動觸發：今日尚未抓取 且 已過設定時間 */
+  /** 自動觸發：有 API Key 且今日尚未抓取則立即執行 */
   function autoTriggerIfNeeded() {
     if (!topic.value)
+      return
+    if (!settingsStore.hasApiKey)
       return
     if (loadCache(topic.value.id))
       return
     if (!topic.value.jinaUrls?.length)
       return
-
-    const [h = 7, m = 0] = settingsStore.fetchTime.split(':').map(Number)
-    const now = new Date()
-    const triggerTime = new Date()
-    triggerTime.setHours(h, m, 0, 0)
-
-    if (now >= triggerTime) {
-      run()
-    }
+    run()
   }
 
   watch(topic, () => {
     loadFromCache()
     autoTriggerIfNeeded()
   }, { immediate: true })
+
+  watch(() => settingsStore.hasApiKey, (hasKey) => {
+    if (hasKey)
+      autoTriggerIfNeeded()
+  })
 
   const stageLabel = computed(() => ({
     'idle': '',
