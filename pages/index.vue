@@ -12,20 +12,10 @@ const activeTopicId = computed(() => topicsStore.activeTopicId)
 const activeTopicColor = computed(() =>
   activeTopic.value ? TOPIC_COLORS[activeTopic.value.color] : null,
 )
-const forceOpenSettings = ref(false)
 
 const mobileDrawer = computed({
   get: () => settingsStore.mobileDrawerOpen,
   set: v => settingsStore.setMobileDrawer(v),
-})
-
-onMounted(() => {
-  forceOpenSettings.value = !settingsStore.hasApiKey
-})
-
-watch(() => settingsStore.hasApiKey, (hasApiKey) => {
-  if (hasApiKey)
-    forceOpenSettings.value = false
 })
 </script>
 
@@ -49,10 +39,6 @@ watch(() => settingsStore.hasApiKey, (hasApiKey) => {
   </v-navigation-drawer>
 
   <LayoutAppHeader />
-  <LayoutSettingsModal
-    v-if="forceOpenSettings"
-    :force-open="forceOpenSettings"
-  />
 
   <v-main>
     <!-- Feed 區域 -->

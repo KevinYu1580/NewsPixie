@@ -3,12 +3,6 @@ import type { AIProvider } from '@/types/ai'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { PROVIDER_CONFIGS } from '@/types/ai'
 
-const props = withDefaults(defineProps<{
-  forceOpen?: boolean
-}>(), {
-  forceOpen: false,
-})
-
 const settingsStore = useSettingsStore()
 
 const dialog = ref(false)
@@ -117,14 +111,6 @@ function handleSave() {
   dialog.value = false
 }
 
-const dialogModel = computed({
-  get: () => props.forceOpen || dialog.value,
-  set: (value) => {
-    if (!props.forceOpen)
-      dialog.value = value
-  },
-})
-
 const currentConfig = computed(() => PROVIDER_CONFIGS[localProvider.value])
 
 const maskedKey = computed(() => {
@@ -133,24 +119,10 @@ const maskedKey = computed(() => {
     return ''
   return `${k.slice(0, 6)}••••••••••••••••${k.slice(-4)}`
 })
-
-const canSave = computed(() => !!localKeys.value[localProvider.value].trim())
-
-const showForceMessage = computed(() => props.forceOpen || !settingsStore.hasApiKey)
-
-watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
-  if (forceOpen) {
-    openDialog()
-    return
-  }
-  if (wasForceOpen && settingsStore.hasApiKey)
-    dialog.value = false
-}, { immediate: true })
 </script>
 
 <template>
   <v-btn
-    v-if="!forceOpen"
     icon="mdi-cog-outline"
     variant="text"
     size="small"
@@ -158,20 +130,13 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
     @click="openDialog"
   />
 
-  <v-dialog v-model="dialogModel" max-width="420">
+  <v-dialog v-model="dialog" max-width="420">
     <v-card>
       <v-card-title class="font-mono-label text-sm tracking-widest text-uppercase pt-5 px-5">
         設定
       </v-card-title>
 
       <v-card-text class="px-5 pb-5">
-        <p
-          v-if="showForceMessage"
-          class="text-body-2 text-medium-emphasis mb-4"
-        >
-          NewsPixie 依賴 AI 服務，請先選擇 Provider 並輸入 API Key 以開始使用。
-        </p>
-
         <!-- Provider 選擇 -->
         <div class="mb-5">
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
@@ -396,14 +361,12 @@ watch(() => props.forceOpen, (forceOpen, wasForceOpen) => {
 
       <v-card-actions class="justify-end px-5 pb-5 pt-0">
         <v-btn
-          v-if="!forceOpen"
           variant="text"
           @click="dialog = false"
         >
           取消
         </v-btn>
         <v-btn
-          :disabled="!canSave"
           variant="flat"
           @click="handleSave"
         >
