@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RepoItem } from '@/types/content'
-import { formatNumber, truncate } from '@/utils/utils'
+import { formatNumber } from '@/utils/utils'
 
 const props = defineProps<{
   repo: RepoItem
@@ -37,8 +37,8 @@ const [owner, name] = computed(() => props.repo.name.split('/')).value
       </div>
 
       <!-- 說明 -->
-      <p v-if="repo.description" class="text-caption text-medium-emphasis mb-3">
-        {{ truncate(repo.description, 100) }}
+      <p v-if="repo.description" class="np-repo-desc text-caption text-medium-emphasis mb-3">
+        {{ repo.description }}
       </p>
 
       <!-- 統計 -->
@@ -63,3 +63,13 @@ const [owner, name] = computed(() => props.repo.name.split('/')).value
     </v-card-text>
   </v-card>
 </template>
+
+<style lang="scss" scoped>
+.np-repo-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  line-clamp: 5;
+  overflow: hidden;
+}
+</style>
