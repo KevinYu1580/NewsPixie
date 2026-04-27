@@ -13,6 +13,8 @@ const emit = defineEmits<{
   deleteTopic: [id: string]
 }>()
 
+const { t } = useI18n()
+
 const managerModal = ref(false)
 const managerInitialMode = ref<'list' | 'add'>('list')
 
@@ -31,13 +33,13 @@ function openAdd() {
   <!-- 標題列 -->
   <div class="d-flex align-center justify-space-between px-4" style="height: 40px;">
     <span class="font-mono-label text-xs font-weight-bold text-uppercase tracking-widest text-medium-emphasis">
-      主題
+      {{ t('sidebar.topicsLabel') }}
     </span>
     <v-btn
       icon="mdi-tune"
       variant="text"
       size="x-small"
-      aria-label="管理主題"
+      :aria-label="t('sidebar.manageTopics')"
       @click="openManage"
     />
   </div>
@@ -64,10 +66,10 @@ function openAdd() {
       variant="text"
       size="small"
       class="w-100 justify-start text-medium-emphasis"
-      aria-label="新增主題"
+      :aria-label="t('sidebar.addTopic')"
       @click="openAdd"
     >
-      新增主題
+      {{ t('sidebar.addTopic') }}
     </v-btn>
   </div>
 
@@ -75,7 +77,7 @@ function openAdd() {
     v-model="managerModal"
     :topics="topics"
     :initial-mode="managerInitialMode"
-    @add="(t) => emit('addTopic', t)"
+    @add="(topic) => emit('addTopic', topic)"
     @update="(id, u) => emit('updateTopic', id, u)"
     @delete="(id) => emit('deleteTopic', id)"
   />

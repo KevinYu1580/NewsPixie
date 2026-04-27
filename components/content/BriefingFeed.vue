@@ -26,6 +26,8 @@ const hasJinaUrls = computed(() => (props.topic.jinaUrls?.length ?? 0) > 0)
 const settingsStore = useSettingsStore()
 const hasApiKey = computed(() => settingsStore.hasApiKey)
 
+const { t } = useI18n()
+
 const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErrorMessage, cachedAt: repoCachedAt, refetch: refetchRepos } = useGithubTrending(topicRef)
 </script>
 
@@ -81,10 +83,10 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
 
     <div class="text-center">
       <p class="text-body-1 mb-1">
-        尚未設定 AI API Key
+        {{ t('briefingFeed.noApiKeyTitle') }}
       </p>
       <p class="text-caption text-medium-emphasis">
-        點選右上角齒輪圖示，輸入 API Key 即可啟用每日精選與趨勢 Repos
+        {{ t('briefingFeed.noApiKeyHint') }}
       </p>
     </div>
   </div>
@@ -93,7 +95,7 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
   <div v-else class="d-flex flex-column ga-8">
     <!-- 每日精選新聞（Jina + AI） -->
     <ContentSection
-      title="每日精選"
+      :title="t('briefingFeed.dailyBriefing')"
       :count="articles?.length ?? 0"
       :is-loading="false"
       :is-empty="false"
@@ -110,7 +112,7 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
           size="x-small"
           :disabled="briefingLoading"
           :class="{ 'rotate-animation': briefingLoading }"
-          aria-label="立即重新抓取"
+          :aria-label="t('briefingFeed.refetchNow')"
           @click.stop="run"
         />
       </template>
@@ -128,7 +130,7 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
 
     <!-- GitHub Trending -->
     <ContentSection
-      title="趨勢 Repos"
+      :title="t('briefingFeed.trendingRepos')"
       :count="repos?.length ?? 0"
       :is-loading="false"
       :is-empty="false"
@@ -143,7 +145,7 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
           size="x-small"
           :disabled="repoLoading"
           :class="{ 'rotate-animation': repoLoading }"
-          aria-label="重新抓取趨勢 Repos"
+          :aria-label="t('briefingFeed.refetchTrending')"
           @click.stop="refetchRepos"
         />
       </template>

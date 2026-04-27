@@ -2,6 +2,8 @@
 import type { Topic } from '@/types/topic'
 import { TOPIC_COLORS } from '@/types/topic'
 
+const { t } = useI18n()
+
 export type TopicModalInitialMode = 'list' | 'add'
 
 type ModalMode = 'list' | 'add' | { type: 'edit', topic: Topic } | { type: 'delete', topic: Topic }
@@ -40,12 +42,12 @@ watch(dialog, (open) => {
 
 const title = computed(() => {
   if (mode.value === 'list')
-    return '管理主題'
+    return t('topicManager.manage')
   if (mode.value === 'add')
-    return '新增主題'
+    return t('topicManager.add')
   if (typeof mode.value === 'object' && mode.value.type === 'edit')
-    return '編輯主題'
-  return '刪除主題'
+    return t('topicManager.edit')
+  return t('topicManager.delete')
 })
 
 function closeDialog() {
@@ -159,7 +161,7 @@ function saveChanges() {
                   icon="mdi-pencil-outline"
                   variant="text"
                   size="x-small"
-                  :aria-label="`編輯 ${topic.name}`"
+                  :aria-label="t('topicManager.editTopicAria', { name: topic.name })"
                   @click="mode = { type: 'edit', topic }"
                 />
                 <v-btn
@@ -167,7 +169,7 @@ function saveChanges() {
                   variant="text"
                   size="x-small"
                   color="error"
-                  :aria-label="`刪除 ${topic.name}`"
+                  :aria-label="t('topicManager.deleteTopicAria', { name: topic.name })"
                   @click="mode = { type: 'delete', topic }"
                 />
               </div>
@@ -180,7 +182,7 @@ function saveChanges() {
             size="small"
             @click="mode = 'add'"
           >
-            新增主題
+            {{ t('topicManager.add') }}
           </v-btn>
         </div>
 
@@ -188,7 +190,7 @@ function saveChanges() {
         <TopicsTopicForm
           v-if="mode === 'add'"
           :key="`add-${localTopics.length}`"
-          submit-label="新增"
+          :submit-label="t('topicManager.addBtn')"
           @submit="addLocalTopic"
           @cancel="initialMode === 'add' ? closeDialog() : (mode = 'list')"
         />
@@ -198,7 +200,7 @@ function saveChanges() {
           v-if="typeof mode === 'object' && mode.type === 'edit'"
           :key="(mode as { type: 'edit'; topic: Topic }).topic.id"
           :initial="(mode as { type: 'edit'; topic: Topic }).topic"
-          submit-label="儲存"
+          :submit-label="t('topicManager.save')"
           @submit="(data) => updateLocalTopic((mode as { type: 'edit'; topic: Topic }).topic.id, data)"
           @cancel="mode = 'list'"
         />
@@ -209,21 +211,21 @@ function saveChanges() {
           class="d-flex flex-column ga-4"
         >
           <p class="text-body-2 text-medium-emphasis">
-            確定要刪除主題
+            {{ t('topicManager.deleteConfirm') }}
             <span class="font-weight-medium text-high-emphasis">
               「{{ (mode as { type: 'delete'; topic: Topic }).topic.name }}」
-            </span>？<br>此操作無法復原。
+            </span>？<br>{{ t('topicManager.deleteWarning') }}
           </p>
           <div class="d-flex justify-end ga-2">
             <v-btn variant="text" @click="mode = 'list'">
-              取消
+              {{ t('topicManager.cancel') }}
             </v-btn>
             <v-btn
               variant="flat"
               color="error"
               @click="deleteLocalTopic((mode as { type: 'delete'; topic: Topic }).topic.id)"
             >
-              刪除
+              {{ t('topicManager.deleteBtn') }}
             </v-btn>
           </div>
         </div>
@@ -231,10 +233,10 @@ function saveChanges() {
 
       <v-card-actions v-if="mode === 'list'" class="justify-end px-5 pb-5 pt-0">
         <v-btn variant="text" @click="closeDialog">
-          取消
+          {{ t('topicManager.cancel') }}
         </v-btn>
         <v-btn variant="flat" @click="saveChanges">
-          儲存
+          {{ t('topicManager.save') }}
         </v-btn>
       </v-card-actions>
     </v-card>

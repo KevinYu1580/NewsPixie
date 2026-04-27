@@ -6,6 +6,9 @@ import { TOPIC_COLORS } from '@/types/topic'
 const topicsStore = useTopicsStore()
 const settingsStore = useSettingsStore()
 
+const { t } = useI18n()
+useHead({ title: () => t('index.pageTitle') })
+
 const topics = computed(() => topicsStore.topics)
 const activeTopic = computed(() => topicsStore.activeTopic)
 const activeTopicId = computed(() => topicsStore.activeTopicId)
@@ -72,7 +75,7 @@ const mobileDrawer = computed({
           class="d-flex flex-column align-center justify-center text-center py-20"
         >
           <p class="text-medium-emphasis">
-            尚未設定主題，請點擊側邊欄新增。
+            {{ t('index.noTopicHint') }}
           </p>
         </div>
       </div>

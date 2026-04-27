@@ -1,6 +1,6 @@
 # NewsPixie — 架構說明文件 (arc24)
 
-> 版本：0.1.0 | 日期：2026-04-14
+> 版本：0.2.1 | 日期：2026-04-27
 
 ---
 
@@ -40,6 +40,8 @@
 10. [快取策略](#10-快取策略)
 11. [設定與環境變數](#11-設定與環境變數)
 12. [持久化機制](#12-持久化機制)
+13. [多語系（i18n）](#13-多語系i18n)
+14. [E2E 測試](#14-e2e-測試)
 
 ---
 
@@ -72,6 +74,7 @@
 | Linting | ESLint + @antfu/eslint-config |
 | 測試 | Vitest |
 | 套件管理 | pnpm |
+| 國際化 | @nuxtjs/i18n v9（strategy: no_prefix，支援 zh-TW / en） |
 
 ---
 
@@ -82,6 +85,10 @@ NewsPixie/
 ├── app.vue                  # 根元件（主題色注入）
 ├── pages/
 │   └── index.vue            # 唯一頁面，組合 Sidebar + Header + Feed
+├── i18n/
+│   └── locales/
+│       ├── zh-TW.json   # 繁體中文語系檔
+│       └── en.json      # 英文語系檔
 ├── components/
 │   ├── layout/
 │   │   ├── AppHeader.vue    # 頂部 AppBar（標題、主題切換、設定入口）
@@ -509,9 +516,9 @@ pages/index.vue
     └── ContentBriefingFeed
 ```
 
-**AppHeader** — 含品牌名稱、日期播報標籤、`SettingsModal` 入口、深/淺色切換。
+**AppHeader** — 含品牌名稱、日期播報標籤、語系切換器（`v-btn-toggle`：繁中 / EN，透過 `useI18n().setLocale` 切換）、`SettingsModal` 入口、深/淺色切換。aria-label 文字透過 `useI18n().t()` 對應 `header.*` key。
 
-**AppSidebar** — 主題清單（`TopicItem` × N）、新增按鈕、管理按鈕；透過 emit 將 CRUD 操作傳至 `pages/index.vue` → `topicsStore`。
+**AppSidebar** — 主題清單（`TopicItem` × N）、新增按鈕、管理按鈕；透過 emit 將 CRUD 操作傳至 `pages/index.vue` → `topicsStore`。文字（標題、aria-label、按鈕內文）透過 `useI18n().t()` 對應 `sidebar.*` key。注意 `@add` event handler 參數命名為 `topic` 以避免與 i18n 的 `t` 衝突。
 
 **SettingsModal** — 負責 API Key 輸入、每日觸發時間、精選篇數、Repo 數、模型選擇。採本地 state 暫存，點「儲存」後統一 commit 至 [settingsStore](#52-settingsstore)。API Key 為選填，不填亦可儲存（僅影響 BriefingFeed 是否顯示內容）。
 
@@ -662,3 +669,48 @@ TopicsTopicManagerModal
 **手動快取（每日內容）**
 
 由各 composable 自行管理（見 [§10](#10-快取策略)）。
+
+---
+
+## 13. 多語系（i18n）
+
+使用 **@nuxtjs/i18n v9**（vue-i18n v10）。
+
+| 項目 | 設定 |
+|------|------|
+| 策略 | `no_prefix`（CSR SPA，無 URL prefix） |
+| 預設語系 | `zh-TW` |
+| 支援語系 | `zh-TW`（繁體中文）、`en`（英文） |
+| 語系持久化 | Cookie `np_locale` |
+| 語系切換器 | AppHeader 右上角 `v-btn-toggle` |
+
+語系檔案位於 [i18n/locales/](i18n/locales/)，採 lazy 載入。`langDir: 'locales/'` 在 @nuxtjs/i18n v9 中解析為相對 `<rootDir>/i18n/` 的路徑，實際路徑為 `i18n/locales/`。只翻譯靜態 UI 文字，API 回傳的動態資料（新聞標題、Repo 描述等）維持原文不翻。
+
+`useI18n()` 由 @nuxtjs/i18n 自動注入至所有 Vue 元件及 Nuxt composables，無需手動 import。
+
+已套用 i18n 的內容層元件與 composable：[BriefingFeed](components/content/BriefingFeed.vue)、[Section](components/content/Section.vue)、[news/Briefing](components/content/news/Briefing.vue)、[github/Trending](components/content/github/Trending.vue)、[useDailyBriefing](composables/useDailyBriefing.ts)。Key namespace：`briefingFeed.*`、`section.*`、`briefing.*`、`trending.*`、`stage.*`、`error.*`，動態插值範例 `briefing.autoFetchNote = "精選內容將於每日 {time} 自動抓取"`。
+
+---
+
+## 14. E2E 測試
+
+使用 **Playwright**（`@playwright/test`）對 i18n 功能進行 E2E 驗證。
+
+| 項目 | 詳情 |
+|------|------|
+| 設定檔 | [playwright.config.ts](playwright.config.ts) |
+| 測試目錄 | [e2e/](e2e/) |
+| 執行指令 | `npx playwright test` |
+| WebServer | `pnpm dev`（port 3000，`reuseExistingServer: true`） |
+
+### 測試範疇（[e2e/i18n.spec.ts](e2e/i18n.spec.ts)）
+
+- **zh-TW 預設語系**：頁面標題、v-btn-toggle 選取狀態、noTopicHint 文字、側邊欄標籤、設定彈窗標題
+- **切換至 EN**：noTopicHint 切換、頁面標題切換、側邊欄新增按鈕、設定彈窗標題
+- **Cookie 持久化**：切換 EN 後重新整理仍保持英文；切回 zh-TW 後重新整理仍保持繁中
+
+### 測試注意事項
+
+- 每個測試以 `np_locale` cookie 明確設定語系，不依賴 Playwright Chromium 的 en-US 預設瀏覽器語系（避免 `detectBrowserLanguage` 干擾）
+- `topicsStore` 初始值為 `DEFAULT_TOPICS`；測試前注入空主題 `newspixie-topics: { topics: [], activeTopicId: null }` 至 localStorage，讓 noTopicHint 顯示
+- 使用 `{ exact: true }` 避免 Playwright 的寬鬆 accessible name 比對誤中其他元素

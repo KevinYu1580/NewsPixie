@@ -74,6 +74,7 @@ function getErrorMessage(error: unknown): string | null {
  */
 export function useDailyBriefing(topic: Ref<Topic | null>) {
   const settingsStore = useSettingsStore()
+  const { t } = useI18n()
 
   const articles = ref<CuratedArticle[]>([])
   const generatedAt = ref('')
@@ -108,11 +109,11 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
     if (!settingsStore.hasApiKey)
       return
 
-    const t = topic.value
-    if (!t || isLoading.value)
+    const topicValue = topic.value
+    if (!topicValue || isLoading.value)
       return
-    if (!t.jinaUrls || t.jinaUrls.length === 0) {
-      error.value = '此主題尚未設定任何網站來源（Jina URL）'
+    if (!topicValue.jinaUrls || topicValue.jinaUrls.length === 0) {
+      error.value = t('error.noUrls')
       return
     }
 
@@ -123,7 +124,7 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
       // Step 1：Jina 抓各來源首頁 raw markdown
       stage.value = 'fetching-list'
       const listResults = await Promise.allSettled(
-        t.jinaUrls.map(url =>
+        topicValue.jinaUrls.map(url =>
           $fetch<{ content: string }>('/api/jina-fetch', {
             query: { url },
           }),
@@ -137,7 +138,7 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
         .map(r => r.value.content)
 
       if (contents.length === 0) {
-        throw new Error('所有來源均無法取得頁面內容，請確認 URL 是否正確')
+        throw new Error(t('error.noContent'))
       }
 
       // Step 2：AI 從 markdown 提取文章
@@ -175,7 +176,7 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
           .map(r => getErrorMessage(r.reason))
           .find(Boolean)
 
-        throw new Error(extractError ?? 'AI 未能從頁面內容中辨識出任何文章')
+        throw new Error(extractError ?? t('error.noArticles'))
       }
 
       // Step 3：AI 精選 top N
@@ -183,8 +184,8 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
       const curateResult = await $fetch<{ selected: { title: string, url: string }[] }>('/api/ai-curate', {
         method: 'POST',
         body: {
-          topicName: t.name,
-          keywords: t.keywords,
+          topicName: topicValue.name,
+          keywords: topicValue.keywords,
           articles: allArticles,
           count: settingsStore.articleCount,
           apiKey: settingsStore.currentApiKey,
@@ -214,14 +215,14 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
       stage.value = 'done'
 
       saveCache({
-        topicId: t.id,
+        topicId: topicValue.id,
         date: todayStr(),
         articles: withImages,
         generatedAt: now,
       })
     }
     catch (err) {
-      error.value = getErrorMessage(err) ?? '每日精選生成失敗'
+      error.value = getErrorMessage(err) ?? t('error.briefingFailed')
       stage.value = 'idle'
     }
     finally {
@@ -254,9 +255,9 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
 
   const stageLabel = computed(() => ({
     'idle': '',
-    'fetching-list': '正在抓取頁面內容…',
-    'extracting': 'AI 正在辨識文章…',
-    'curating': 'AI 精選中…',
+    'fetching-list': t('stage.fetchingList'),
+    'extracting': t('stage.extracting'),
+    'curating': t('stage.curating'),
     'done': '',
   }[stage.value]))
 

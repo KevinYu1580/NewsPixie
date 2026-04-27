@@ -14,6 +14,7 @@ const props = defineProps<{
 }>()
 
 const settingsStore = useSettingsStore()
+const { t } = useI18n()
 </script>
 
 <template>
@@ -44,7 +45,7 @@ const settingsStore = useSettingsStore()
       type="info"
       variant="tonal"
       density="compact"
-      text="尚未設定新聞來源網址，請至主題設定新增網站。"
+      :text="t('briefing.noSourceUrl')"
     />
 
     <!-- 精選文章清單 -->
@@ -59,7 +60,7 @@ const settingsStore = useSettingsStore()
     <!-- 空狀態（設定了來源但尚未觸發） -->
     <div v-else class="text-center py-6 text-medium-emphasis">
       <p class="text-body-2 mb-3">
-        精選內容將於每日 {{ settingsStore.fetchTime }} 自動抓取
+        {{ t('briefing.autoFetchNote', { time: settingsStore.fetchTime }) }}
       </p>
       <v-btn
         variant="tonal"
@@ -68,7 +69,7 @@ const settingsStore = useSettingsStore()
         prepend-icon="mdi-play"
         @click="props.run"
       >
-        立即執行
+        {{ t('briefing.runNow') }}
       </v-btn>
     </div>
   </div>

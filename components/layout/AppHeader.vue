@@ -17,6 +17,8 @@ function toggleTheme() {
   theme.change(nextTheme)
 }
 
+const { t, locale, setLocale } = useI18n()
+
 const briefingDate = formatBriefingDate()
 </script>
 
@@ -28,7 +30,7 @@ const briefingDate = formatBriefingDate()
         variant="text"
         size="small"
         class="d-flex"
-        aria-label="開啟主題選單"
+        :aria-label="t('header.openMenu')"
         @click="settingsStore.setMobileDrawer(true)"
       />
       <div class="d-flex align-center ga-2 pl-4">
@@ -48,12 +50,24 @@ const briefingDate = formatBriefingDate()
     </div>
 
     <template #append>
+      <v-btn-toggle
+        :model-value="locale"
+        mandatory
+        density="compact"
+        variant="outlined"
+        color="np-accent"
+        class="mr-2"
+        @update:model-value="setLocale"
+      >
+        <v-btn value="zh-TW" size="small">繁中</v-btn>
+        <v-btn value="en" size="small">EN</v-btn>
+      </v-btn-toggle>
       <LayoutSettingsModal />
       <v-btn
         :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
         variant="text"
         size="small"
-        :aria-label="isDark ? '切換淺色模式' : '切換深色模式'"
+        :aria-label="isDark ? t('header.switchLight') : t('header.switchDark')"
         @click="toggleTheme"
       />
     </template>

@@ -8,6 +8,8 @@ const props = defineProps<{
   error: string | null
   repoCount: number
 }>()
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -27,7 +29,7 @@ const props = defineProps<{
       type="error"
       variant="tonal"
       density="compact"
-      :text="props.error ?? '抓取趨勢 Repos 失敗，請稍後再試。'"
+      :text="props.error ?? t('trending.fetchError')"
     />
 
     <!-- 空狀態 -->
@@ -35,7 +37,7 @@ const props = defineProps<{
       v-else-if="!props.repos?.length"
       class="text-center text-caption text-medium-emphasis py-6"
     >
-      暫無趨勢 Repo
+      {{ t('trending.noRepos') }}
     </p>
 
     <!-- 卡片清單 -->

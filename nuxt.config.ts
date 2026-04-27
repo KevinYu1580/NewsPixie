@@ -4,6 +4,7 @@ export default defineNuxtConfig({
   ssr: false,
 
   modules: [
+    '@nuxtjs/i18n',
     '@pinia/nuxt',
     '@pinia-plugin-persistedstate/nuxt',
     'nuxt-module-eslint-config',
@@ -35,12 +36,28 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      htmlAttrs: { lang: 'zh-TW' },
-      title: 'NewsPixie — 每日晨間會報',
+      title: 'NewsPixie',
       meta: [
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       ],
       link: [{ rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' }],
+    },
+  },
+
+  i18n: {
+    strategy: 'no_prefix',
+    defaultLocale: 'zh-TW',
+    locales: [
+      { code: 'zh-TW', language: 'zh-TW', file: 'zh-TW.json', name: '繁中' },
+      { code: 'en', language: 'en-US', file: 'en.json', name: 'EN' },
+    ],
+    langDir: 'locales/',
+    lazy: true,
+    detectBrowserLanguage: {
+      useCookie: true,
+      cookieKey: 'np_locale',
+      redirectOn: 'root',
+      fallbackLocale: 'zh-TW',
     },
   },
 

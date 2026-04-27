@@ -2,6 +2,8 @@
 import type { Topic, TopicColor } from '@/types/topic'
 import { TOPIC_COLORS } from '@/types/topic'
 
+const { t } = useI18n()
+
 const props = defineProps<{
   initial?: Partial<Topic>
   submitLabel?: string
@@ -65,7 +67,7 @@ function handleSubmit() {
       <!-- 主題名稱 -->
       <div>
         <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-          主題名稱
+          {{ t('topicForm.topicName') }}
         </div>
         <v-text-field
           v-model="name"
@@ -74,21 +76,21 @@ function handleSubmit() {
           variant="outlined"
           hide-details
           required
-          aria-label="主題名稱"
+          :aria-label="t('topicForm.topicName')"
         />
       </div>
 
       <!-- 顏色選擇 -->
       <div>
         <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-          顏色
+          {{ t('topicForm.color') }}
         </div>
         <div class="d-flex ga-2">
           <button
             v-for="c in COLOR_OPTIONS"
             :key="c"
             type="button"
-            :aria-label="`選擇 ${c} 顏色`"
+            :aria-label="t('topicForm.colorSelectAria', { color: c })"
             class="np-color-btn"
             :class="{ 'np-color-btn--active': color === c }"
             :style="{ backgroundColor: TOPIC_COLORS[c].hex }"
@@ -100,7 +102,7 @@ function handleSubmit() {
       <!-- 關鍵字 -->
       <div>
         <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-          過濾關鍵字
+          {{ t('topicForm.filterKeywords') }}
           <v-tooltip
             location="top"
             interactive
@@ -110,14 +112,14 @@ function handleSubmit() {
             </template>
 
             <span>
-              Ai引擎會優先分析包含這些關鍵字的文章<br>建議輸入與主題相關的詞彙
+              {{ t('topicForm.keywordsTooltip') }}
             </span>
           </v-tooltip>
         </div>
         <div class="d-flex align-center ga-2 mb-2">
           <v-text-field
             v-model="kwInput"
-            placeholder="輸入關鍵字後按 Enter"
+            :placeholder="t('topicForm.keywordPlaceholder')"
             density="compact"
             variant="outlined"
             hide-details
@@ -125,7 +127,7 @@ function handleSubmit() {
             @keydown.enter.prevent="addKeyword"
           />
           <v-btn size="small" @click="addKeyword">
-            新增
+            {{ t('topicForm.addBtn') }}
           </v-btn>
         </div>
         <div v-if="keywords.length > 0" class="d-flex flex-wrap ga-2">
@@ -134,7 +136,7 @@ function handleSubmit() {
             :key="kw"
             size="small"
             closable
-            :aria-label="`移除關鍵字 ${kw}`"
+            :aria-label="t('topicForm.removeKeywordAria', { kw })"
             @click:close="removeKeyword(kw)"
           >
             {{ kw }}
@@ -145,7 +147,7 @@ function handleSubmit() {
       <!-- GitHub 查詢 -->
       <div>
         <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-          GitHub 搜尋詞
+          {{ t('topicForm.githubQuery') }}
         </div>
         <v-text-field
           v-model="githubQuery"
@@ -153,14 +155,14 @@ function handleSubmit() {
           density="compact"
           variant="outlined"
           hide-details
-          aria-label="GitHub 搜尋詞"
+          :aria-label="t('topicForm.githubQuery')"
         />
       </div>
 
       <!-- Jina 新聞來源 -->
       <div>
         <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-          新聞來源網址
+          {{ t('topicForm.newsSourceUrl') }}
           <v-tooltip
             location="top"
             interactive
@@ -170,7 +172,7 @@ function handleSubmit() {
             </template>
 
             <span>
-              為新聞資料來源，建議輸入包文章列表的網站以便最佳化Ai摘要效果<br>例：<a class="text-blue" href="https://www.bnext.com.tw/" target="_blank" rel="noopener noreferrer">https://www.bnext.com.tw/</a>
+              {{ t('topicForm.urlsTooltip') }}
             </span>
           </v-tooltip>
         </div>
@@ -185,7 +187,7 @@ function handleSubmit() {
             @keydown.enter.prevent="addJinaUrl"
           />
           <v-btn size="small" @click="addJinaUrl">
-            加入
+            {{ t('topicForm.joinBtn') }}
           </v-btn>
         </div>
         <div v-if="jinaUrls.length > 0" class="d-flex flex-column ga-1">
@@ -200,7 +202,7 @@ function handleSubmit() {
               icon="mdi-close"
               variant="text"
               size="x-small"
-              :aria-label="`移除 ${url}`"
+              :aria-label="t('topicForm.removeUrlAria', { url })"
               @click="removeJinaUrl(url)"
             />
           </div>
@@ -210,14 +212,14 @@ function handleSubmit() {
       <!-- 操作按鈕 -->
       <div class="d-flex justify-end ga-2 pt-2">
         <v-btn variant="text" @click="emit('cancel')">
-          取消
+          {{ t('topicForm.cancel') }}
         </v-btn>
         <v-btn
           type="submit"
           variant="flat"
           :disabled="!name.trim()"
         >
-          {{ submitLabel ?? '儲存' }}
+          {{ submitLabel ?? t('topicForm.save') }}
         </v-btn>
       </div>
     </div>

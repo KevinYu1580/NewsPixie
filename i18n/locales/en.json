@@ -1,0 +1,102 @@
+{
+  "header": {
+    "openMenu": "Open topic menu",
+    "briefingPrefix": "BRIEFING  //  ",
+    "switchLight": "Switch to light mode",
+    "switchDark": "Switch to dark mode"
+  },
+  "settings": {
+    "openSettings": "Open settings",
+    "title": "Settings",
+    "aiProvider": "AI Provider",
+    "notAvailable": "Not available",
+    "apiKey": "API Key",
+    "currentKey": "Current: ",
+    "hideKey": "Hide API Key",
+    "showKey": "Show API Key",
+    "keyStorageNote": "Your key is stored in localStorage encrypted with AES and is never sent to any third party.",
+    "dailyBriefingSettings": "Daily Briefing Settings",
+    "autoTriggerTime": "Auto-trigger time",
+    "autoTriggerNote": "After the app opens, if the trigger time has passed and today's fetch hasn't run, it will execute once automatically.",
+    "articleCount": "Articles per topic (4–10)",
+    "repoCount": "Repos per topic (4–10)",
+    "summaryModel": "AI Summary Model",
+    "refreshModelList": "Refresh model list",
+    "modelListError": "Failed to fetch model list",
+    "retry": "Retry",
+    "enterKeyFirst": "Enter your API Key to load available models",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "briefingFeed": {
+    "noApiKeyTitle": "No AI API Key configured",
+    "noApiKeyHint": "Click the gear icon in the top right and enter your API Key to enable daily briefing and trending repos",
+    "dailyBriefing": "Daily Briefing",
+    "refetchNow": "Refresh now",
+    "trendingRepos": "Trending Repos",
+    "refetchTrending": "Refresh trending repos"
+  },
+  "section": {
+    "emptyDefault": "No content yet"
+  },
+  "index": {
+    "pageTitle": "NewsPixie — Daily Briefing",
+    "noTopicHint": "No topics configured. Click the sidebar to add one."
+  },
+  "briefing": {
+    "noSourceUrl": "No news source URLs configured. Add websites in topic settings.",
+    "autoFetchNote": "Content will be auto-fetched daily at {time}",
+    "runNow": "Run now"
+  },
+  "trending": {
+    "fetchError": "Failed to fetch trending repos. Please try again later.",
+    "noRepos": "No trending repos"
+  },
+  "topicManager": {
+    "manage": "Manage Topics",
+    "add": "Add Topic",
+    "edit": "Edit Topic",
+    "delete": "Delete Topic",
+    "addBtn": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "deleteBtn": "Delete",
+    "deleteConfirm": "Delete topic",
+    "deleteWarning": "This action cannot be undone.",
+    "editTopicAria": "Edit {name}",
+    "deleteTopicAria": "Delete {name}"
+  },
+  "topicForm": {
+    "topicName": "Topic name",
+    "color": "Color",
+    "filterKeywords": "Filter keywords",
+    "githubQuery": "GitHub search query",
+    "newsSourceUrl": "News source URLs",
+    "keywordPlaceholder": "Type a keyword then press Enter",
+    "addBtn": "Add",
+    "joinBtn": "Add",
+    "save": "Save",
+    "cancel": "Cancel",
+    "removeKeywordAria": "Remove keyword {kw}",
+    "removeUrlAria": "Remove {url}",
+    "keywordsTooltip": "The AI engine will prioritize articles containing these keywords. Recommended: topic-related terms.",
+    "urlsTooltip": "News data sources. Recommended: pages with article listings for best AI summarization results.",
+    "colorSelectAria": "Select {color} color"
+  },
+  "sidebar": {
+    "topicsLabel": "Topics",
+    "manageTopics": "Manage topics",
+    "addTopic": "Add topic"
+  },
+  "stage": {
+    "fetchingList": "Fetching page content…",
+    "extracting": "AI is identifying articles…",
+    "curating": "AI is curating…"
+  },
+  "error": {
+    "noUrls": "No website sources configured for this topic",
+    "noContent": "Unable to fetch content from any source. Please check your URLs.",
+    "noArticles": "AI could not identify any articles from the page content",
+    "briefingFailed": "Daily briefing generation failed"
+  }
+}

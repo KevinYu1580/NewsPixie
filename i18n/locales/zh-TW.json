@@ -1,0 +1,102 @@
+{
+  "header": {
+    "openMenu": "開啟主題選單",
+    "briefingPrefix": "BRIEFING  //  ",
+    "switchLight": "切換淺色模式",
+    "switchDark": "切換深色模式"
+  },
+  "settings": {
+    "openSettings": "開啟設定",
+    "title": "設定",
+    "aiProvider": "AI Provider",
+    "notAvailable": "尚未開放",
+    "apiKey": "API Key",
+    "currentKey": "目前：",
+    "hideKey": "隱藏 API Key",
+    "showKey": "顯示 API Key",
+    "keyStorageNote": "Key 儲存於瀏覽器 localStorage 並且經過加密(AES)，不會傳送至任何第三方。",
+    "dailyBriefingSettings": "每日精選設定",
+    "autoTriggerTime": "自動觸發時間",
+    "autoTriggerNote": "App 開啟後若已過觸發時間且當日尚未抓取，將自動執行一次。",
+    "articleCount": "精選篇數（4–10）",
+    "repoCount": "Repo 數（4–10）",
+    "summaryModel": "AI 摘要模型",
+    "refreshModelList": "重新整理模型清單",
+    "modelListError": "無法獲取模型清單",
+    "retry": "重試",
+    "enterKeyFirst": "請先輸入 API Key 以載入可用模型",
+    "cancel": "取消",
+    "save": "儲存"
+  },
+  "briefingFeed": {
+    "noApiKeyTitle": "尚未設定 AI API Key",
+    "noApiKeyHint": "點選右上角齒輪圖示，輸入 API Key 即可啟用每日精選與趨勢 Repos",
+    "dailyBriefing": "每日精選",
+    "refetchNow": "立即重新抓取",
+    "trendingRepos": "趨勢 Repos",
+    "refetchTrending": "重新抓取趨勢 Repos"
+  },
+  "section": {
+    "emptyDefault": "暫無內容"
+  },
+  "index": {
+    "pageTitle": "NewsPixie — 每日晨間會報",
+    "noTopicHint": "尚未設定主題，請點擊側邊欄新增。"
+  },
+  "briefing": {
+    "noSourceUrl": "尚未設定新聞來源網址，請至主題設定新增網站。",
+    "autoFetchNote": "精選內容將於每日 {time} 自動抓取",
+    "runNow": "立即執行"
+  },
+  "trending": {
+    "fetchError": "抓取趨勢 Repos 失敗，請稍後再試。",
+    "noRepos": "暫無趨勢 Repo"
+  },
+  "topicManager": {
+    "manage": "管理主題",
+    "add": "新增主題",
+    "edit": "編輯主題",
+    "delete": "刪除主題",
+    "addBtn": "新增",
+    "save": "儲存",
+    "cancel": "取消",
+    "deleteBtn": "刪除",
+    "deleteConfirm": "確定要刪除主題",
+    "deleteWarning": "此操作無法復原。",
+    "editTopicAria": "編輯 {name}",
+    "deleteTopicAria": "刪除 {name}"
+  },
+  "topicForm": {
+    "topicName": "主題名稱",
+    "color": "顏色",
+    "filterKeywords": "過濾關鍵字",
+    "githubQuery": "GitHub 搜尋詞",
+    "newsSourceUrl": "新聞來源網址",
+    "keywordPlaceholder": "輸入關鍵字後按 Enter",
+    "addBtn": "新增",
+    "joinBtn": "加入",
+    "save": "儲存",
+    "cancel": "取消",
+    "removeKeywordAria": "移除關鍵字 {kw}",
+    "removeUrlAria": "移除 {url}",
+    "keywordsTooltip": "AI 引擎會優先分析包含這些關鍵字的文章，建議輸入與主題相關的詞彙",
+    "urlsTooltip": "為新聞資料來源，建議輸入包含文章列表的網站以便最佳化 AI 摘要效果",
+    "colorSelectAria": "選擇 {color} 顏色"
+  },
+  "sidebar": {
+    "topicsLabel": "主題",
+    "manageTopics": "管理主題",
+    "addTopic": "新增主題"
+  },
+  "stage": {
+    "fetchingList": "正在抓取頁面內容…",
+    "extracting": "AI 正在辨識文章…",
+    "curating": "AI 精選中…"
+  },
+  "error": {
+    "noUrls": "此主題尚未設定任何網站來源（Jina URL）",
+    "noContent": "所有來源均無法取得頁面內容，請確認 URL 是否正確",
+    "noArticles": "AI 未能從頁面內容中辨識出任何文章",
+    "briefingFailed": "每日精選生成失敗"
+  }
+}

@@ -10,6 +10,8 @@ const props = defineProps<{
 }>()
 
 const collapsed = ref(props.defaultCollapsed ?? false)
+
+const { t } = useI18n()
 </script>
 
 <template>
@@ -58,7 +60,7 @@ const collapsed = ref(props.defaultCollapsed ?? false)
         v-else-if="isEmpty"
         class="text-center text-caption text-medium-emphasis py-6"
       >
-        {{ emptyMessage ?? '暫無內容' }}
+        {{ emptyMessage ?? t('section.emptyDefault') }}
       </p>
       <slot v-else />
     </div>

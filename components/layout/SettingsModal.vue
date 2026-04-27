@@ -3,6 +3,7 @@ import type { AIProvider } from '@/types/ai'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { PROVIDER_CONFIGS } from '@/types/ai'
 
+const { t } = useI18n()
 const settingsStore = useSettingsStore()
 
 const dialog = ref(false)
@@ -55,7 +56,7 @@ async function fetchModels(provider: AIProvider, apiKey: string) {
   }
   catch (e: unknown) {
     const err = e as { data?: { statusMessage?: string }, message?: string }
-    modelsError.value[provider] = err?.data?.statusMessage || err?.message || '無法獲取模型清單'
+    modelsError.value[provider] = err?.data?.statusMessage || err?.message || t('settings.modelListError')
   }
   finally {
     modelsLoading.value[provider] = false
@@ -126,21 +127,21 @@ const maskedKey = computed(() => {
     icon="mdi-cog-outline"
     variant="text"
     size="small"
-    aria-label="開啟設定"
+    :aria-label="t('settings.openSettings')"
     @click="openDialog"
   />
 
   <v-dialog v-model="dialog" max-width="420">
     <v-card>
       <v-card-title class="font-mono-label text-sm tracking-widest text-uppercase pt-5 px-5">
-        設定
+        {{ t('settings.title') }}
       </v-card-title>
 
       <v-card-text class="px-5 pb-5">
         <!-- Provider 選擇 -->
         <div class="mb-5">
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-            AI Provider
+            {{ t('settings.aiProvider') }}
           </div>
 
           <v-btn-toggle
@@ -156,7 +157,7 @@ const maskedKey = computed(() => {
             <v-btn variant="text" value="anthropic" class=" ">
               {{ PROVIDER_CONFIGS.anthropic.label }}
             </v-btn>
-            <v-tooltip text="尚未開放" location="top">
+            <v-tooltip :text="t('settings.notAvailable')" location="top">
               <template #activator="{ props: ttProps }">
                 <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
                   <v-btn variant="text" value="openai" class=" " disabled>
@@ -165,7 +166,7 @@ const maskedKey = computed(() => {
                 </span>
               </template>
             </v-tooltip>
-            <v-tooltip text="尚未開放" location="top">
+            <v-tooltip :text="t('settings.notAvailable')" location="top">
               <template #activator="{ props: ttProps }">
                 <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
                   <v-btn variant="text" value="gemini" class="" disabled>
@@ -180,13 +181,13 @@ const maskedKey = computed(() => {
         <!-- API Key -->
         <div class="mb-5">
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-            API Key
+            {{ t('settings.apiKey') }}
           </div>
           <div
             v-if="maskedKey"
             class="font-mono-label text-caption text-medium-emphasis mb-2"
           >
-            目前：{{ maskedKey }}
+            {{ t('settings.currentKey') }}{{ maskedKey }}
           </div>
           <div class="d-flex align-center ga-2">
             <v-text-field
@@ -205,14 +206,14 @@ const maskedKey = computed(() => {
                   :icon="showKey ? 'mdi-eye-off' : 'mdi-eye'"
                   variant="text"
                   size="x-small"
-                  :aria-label="showKey ? '隱藏 API Key' : '顯示 API Key'"
+                  :aria-label="showKey ? t('settings.hideKey') : t('settings.showKey')"
                   @click="showKey = !showKey"
                 />
               </template>
             </v-text-field>
           </div>
           <p class="text-body-small mt-2">
-            Key 儲存於瀏覽器 localStorage並且經過加密(AES)，不會傳送至任何第三方。
+            {{ t('settings.keyStorageNote') }}
           </p>
         </div>
 
@@ -221,11 +222,11 @@ const maskedKey = computed(() => {
         <!-- 每日精選設定 -->
         <div class="mb-5">
           <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-3">
-            每日精選設定
+            {{ t('settings.dailyBriefingSettings') }}
           </div>
 
           <div class="text-caption text-medium-emphasis mb-1">
-            自動觸發時間
+            {{ t('settings.autoTriggerTime') }}
           </div>
           <v-text-field
             v-model="localFetchTime"
@@ -233,18 +234,18 @@ const maskedKey = computed(() => {
             density="compact"
             variant="outlined"
             hide-details
-            aria-label="每日自動觸發時間"
+            :aria-label="t('settings.autoTriggerTime')"
             class="mb-3"
           />
 
           <p class="text-body-small mt-2">
-            App 開啟後若已過觸發時間且當日尚未抓取，將自動執行一次。
+            {{ t('settings.autoTriggerNote') }}
           </p>
 
           <div class="d-flex ga-3">
             <div class="flex-1-1">
               <div class="text-caption text-medium-emphasis mb-1">
-                精選篇數（4–10）
+                {{ t('settings.articleCount') }}
               </div>
               <v-text-field
                 v-model.number="localArticleCount"
@@ -254,12 +255,12 @@ const maskedKey = computed(() => {
                 density="compact"
                 variant="outlined"
                 hide-details
-                aria-label="每主題精選文章數量"
+                :aria-label="t('settings.articleCount')"
               />
             </div>
             <div class="flex-1-1">
               <div class="text-caption text-medium-emphasis mb-1">
-                Repo 數（4–10）
+                {{ t('settings.repoCount') }}
               </div>
               <v-text-field
                 v-model.number="localRepoCount"
@@ -269,7 +270,7 @@ const maskedKey = computed(() => {
                 density="compact"
                 variant="outlined"
                 hide-details
-                aria-label="每主題顯示 Repo 數量"
+                :aria-label="t('settings.repoCount')"
               />
             </div>
           </div>
@@ -281,7 +282,7 @@ const maskedKey = computed(() => {
         <div>
           <div class="d-flex align-center justify-space-between mb-2">
             <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis">
-              AI 摘要模型
+              {{ t('settings.summaryModel') }}
             </div>
             <v-btn
               v-if="localKeys[localProvider]?.trim()"
@@ -289,7 +290,7 @@ const maskedKey = computed(() => {
               icon="mdi-refresh"
               variant="text"
               size="x-small"
-              aria-label="重新整理模型清單"
+              :aria-label="t('settings.refreshModelList')"
               @click="fetchModels(localProvider, localKeys[localProvider])"
             />
           </div>
@@ -318,7 +319,7 @@ const maskedKey = computed(() => {
                   variant="text"
                   @click="fetchModels(localProvider, localKeys[localProvider])"
                 >
-                  重試
+                  {{ t('settings.retry') }}
                 </v-btn>
               </div>
             </v-alert>
@@ -328,7 +329,7 @@ const maskedKey = computed(() => {
               v-else-if="!localKeys[localProvider]?.trim()"
               class="text-body-2 text-medium-emphasis"
             >
-              請先輸入 API Key 以載入可用模型
+              {{ t('settings.enterKeyFirst') }}
             </p>
 
             <!-- 動態模型卡片 -->
@@ -364,13 +365,13 @@ const maskedKey = computed(() => {
           variant="text"
           @click="dialog = false"
         >
-          取消
+          {{ t('settings.cancel') }}
         </v-btn>
         <v-btn
           variant="flat"
           @click="handleSave"
         >
-          儲存
+          {{ t('settings.save') }}
         </v-btn>
       </v-card-actions>
     </v-card>
