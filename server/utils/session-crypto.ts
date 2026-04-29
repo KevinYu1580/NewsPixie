@@ -7,10 +7,10 @@ function getKey(): Buffer {
     return cachedKey
   const config = useRuntimeConfig()
   const secret = (config.sessionSecret as string)?.trim()
-  if (!secret || secret.length < 32) {
+  if (!secret || secret.length < 16) {
     throw createError({
       statusCode: 500,
-      statusMessage: 'NUXT_SESSION_SECRET 未設定或長度不足（需 ≥32 字元）',
+      statusMessage: 'NUXT_SESSION_SECRET 未設定或長度不足（需 ≥16 字元）',
     })
   }
   cachedKey = crypto.scryptSync(secret, 'newspixie-session-v1', 32)
