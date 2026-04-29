@@ -1,8 +1,8 @@
 import { calcExtractMaxTokens, MAX_CONTENT_LENGTH } from '~/constants'
+import { resolveAICredentials } from '~/server/utils/session'
 
 interface ExtractRequest {
   content: string
-  apiKey?: string
   model?: string
   provider?: string
 }
@@ -16,13 +16,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { content, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
+  const { content } = body
 
   if (!content) {
     throw createError({ statusCode: 400, statusMessage: '缺少 content' })
   }
 
-  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const { apiKey, provider, model } = resolveAICredentials(event, body)
+  const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
 
   const trimmedContent = content.slice(0, MAX_CONTENT_LENGTH)
   const maxTokens = calcExtractMaxTokens(trimmedContent.length)
@@ -43,7 +44,7 @@ ${trimmedContent}
 
   try {
     const text = await chat({
-      model,
+      model: resolvedModel,
       maxTokens,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -71,6 +72,8 @@ ${trimmedContent}
     return { articles }
   }
   catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error)
+      throw error
     const msg = error instanceof Error ? error.message : 'AI 文章提取失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }

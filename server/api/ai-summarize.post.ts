@@ -1,4 +1,5 @@
 import { calcSummarizeMaxTokens } from '~/constants'
+import { resolveAICredentials } from '~/server/utils/session'
 
 interface ArticleWithContent {
   title: string
@@ -9,7 +10,6 @@ interface ArticleWithContent {
 interface SummarizeRequest {
   topicName: string
   articles: ArticleWithContent[]
-  apiKey?: string
   model?: string
   provider?: string
 }
@@ -29,13 +29,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { topicName, articles, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
+  const { topicName, articles } = body
 
   if (!articles || articles.length === 0) {
     throw createError({ statusCode: 400, statusMessage: '缺少 articles' })
   }
 
-  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const { apiKey, provider, model } = resolveAICredentials(event, body)
+  const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
   const maxTokens = calcSummarizeMaxTokens(articles.length)
 
   const articlesText = articles.map((a, i) => {
@@ -52,7 +53,7 @@ ${articlesText}
 
   try {
     const text = await chat({
-      model,
+      model: resolvedModel,
       maxTokens,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -77,6 +78,8 @@ ${articlesText}
     return { articles: result, generatedAt: new Date().toISOString() }
   }
   catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error)
+      throw error
     const msg = error instanceof Error ? error.message : 'AI 摘要生成失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }

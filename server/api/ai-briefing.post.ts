@@ -1,7 +1,8 @@
+import { resolveAICredentials } from '~/server/utils/session'
+
 interface BriefingRequest {
   topicName: string
   headlines: string[]
-  apiKey?: string
   model?: string
   provider?: string
 }
@@ -15,13 +16,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { topicName, headlines, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
+  const { topicName, headlines } = body
 
   if (!headlines || headlines.length === 0) {
     throw createError({ statusCode: 400, statusMessage: '缺少 headlines' })
   }
 
-  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const { apiKey, provider, model } = resolveAICredentials(event, body)
+  const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
 
   const headlineText = headlines
     .slice(0, 15)
@@ -39,7 +41,7 @@ ${headlineText}
 
   try {
     const summary = await chat({
-      model,
+      model: resolvedModel,
       maxTokens: 300,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -47,6 +49,8 @@ ${headlineText}
     return { summary, generatedAt: new Date().toISOString() }
   }
   catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error)
+      throw error
     const msg = error instanceof Error ? error.message : 'AI 摘要生成失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }

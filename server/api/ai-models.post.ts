@@ -1,10 +1,12 @@
+import { decryptEnvelope } from '~/server/utils/asymmetric'
+
 const OPENAI_O_SERIES = /^o\d/
 
 type AIProvider = 'anthropic' | 'openai' | 'gemini'
 
-interface ModelsRequest {
+interface ModelsRequestBody {
   provider: AIProvider
-  apiKey: string
+  encrypted: unknown
 }
 
 interface ModelOption {
@@ -13,23 +15,25 @@ interface ModelOption {
 }
 
 export default defineEventHandler(async (event) => {
-  let body: ModelsRequest
+  let body: ModelsRequestBody
   try {
-    body = await readBody<ModelsRequest>(event)
+    body = await readBody<ModelsRequestBody>(event)
   }
   catch {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { provider, apiKey } = body
-
-  if (!apiKey?.trim()) {
-    throw createError({ statusCode: 400, statusMessage: '缺少 API Key' })
-  }
+  const { provider, encrypted } = body
 
   const validProviders: AIProvider[] = ['anthropic', 'openai', 'gemini']
   if (!validProviders.includes(provider)) {
     throw createError({ statusCode: 400, statusMessage: '無效的 provider' })
+  }
+
+  const { apiKey: rawKey } = decryptEnvelope<{ apiKey?: string }>(encrypted)
+  const apiKey = rawKey?.trim()
+  if (!apiKey) {
+    throw createError({ statusCode: 400, statusMessage: '缺少 API Key' })
   }
 
   try {
@@ -39,7 +43,7 @@ export default defineEventHandler(async (event) => {
         {
           method: 'GET',
           headers: {
-            'x-api-key': apiKey.trim(),
+            'x-api-key': apiKey,
             'anthropic-version': '2023-06-01',
           },
         },
@@ -56,11 +60,10 @@ export default defineEventHandler(async (event) => {
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${apiKey.trim()}`,
+            Authorization: `Bearer ${apiKey}`,
           },
         },
       )
-      // 只留 chat-capable 模型，排除 instruct（completion API）
       const models: ModelOption[] = res.data
         .filter(m =>
           (m.id.startsWith('gpt') || OPENAI_O_SERIES.test(m.id))
@@ -82,7 +85,7 @@ export default defineEventHandler(async (event) => {
       'https://generativelanguage.googleapis.com/v1beta/models',
       {
         method: 'GET',
-        query: { key: apiKey.trim() },
+        query: { key: apiKey },
       },
     )
     const models: ModelOption[] = res.models

@@ -1,4 +1,7 @@
 import { calcDescribeMaxTokens } from '~/constants'
+import { resolveAICredentials } from '~/server/utils/session'
+
+const ARRAY_BLOCK_RE = /\[[\s\S]*\]/
 
 interface RepoInput {
   name: string
@@ -10,7 +13,6 @@ interface RepoInput {
 interface DescribeRequest {
   topicName: string
   repos: RepoInput[]
-  apiKey?: string
   model?: string
   provider?: string
 }
@@ -24,13 +26,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { topicName, repos, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
+  const { topicName, repos } = body
 
   if (!repos || repos.length === 0) {
     throw createError({ statusCode: 400, statusMessage: '缺少 repos' })
   }
 
-  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const { apiKey, provider, model } = resolveAICredentials(event, body)
+  const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
   const maxTokens = calcDescribeMaxTokens(repos.length)
 
   const reposText = repos.map((r, i) => {
@@ -47,7 +50,7 @@ ${reposText}
 
   try {
     const text = await chat({
-      model,
+      model: resolvedModel,
       maxTokens,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -55,10 +58,11 @@ ${reposText}
     let descriptions: string[]
     try {
       descriptions = JSON.parse(text)
-      if (!Array.isArray(descriptions)) descriptions = []
+      if (!Array.isArray(descriptions))
+        descriptions = []
     }
     catch {
-      const match = text.match(/\[[\s\S]*\]/)
+      const match = text.match(ARRAY_BLOCK_RE)
       descriptions = match ? JSON.parse(match[0]) : []
     }
 
@@ -70,6 +74,8 @@ ${reposText}
     }
   }
   catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error)
+      throw error
     const msg = error instanceof Error ? error.message : 'AI 說明生成失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }

@@ -1,9 +1,10 @@
+import { resolveAICredentials } from '~/server/utils/session'
+
 interface CurateRequest {
   topicName: string
   keywords: string[]
   articles: { title: string, url: string }[]
   count: number
-  apiKey?: string
   model?: string
   provider?: string
 }
@@ -22,13 +23,14 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
   }
 
-  const { topicName, keywords, articles, count, apiKey: clientKey, model: clientModel, provider: clientProvider } = body
+  const { topicName, keywords, articles, count } = body
 
   if (!articles || articles.length === 0) {
     throw createError({ statusCode: 400, statusMessage: '缺少 articles' })
   }
 
-  const { chat, model } = createAIClient(clientKey, clientModel, clientProvider)
+  const { apiKey, provider, model } = resolveAICredentials(event, body)
+  const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
 
   const articleList = articles
     .map((a, i) => `${i + 1}. ${a.title}`)
@@ -51,7 +53,7 @@ ${articleList}
 
   try {
     const text = await chat({
-      model,
+      model: resolvedModel,
       maxTokens: 200,
       messages: [{ role: 'user', content: prompt }],
     })
@@ -79,6 +81,8 @@ ${articleList}
     return { selected }
   }
   catch (error) {
+    if (error && typeof error === 'object' && 'statusCode' in error)
+      throw error
     const msg = error instanceof Error ? error.message : 'AI 精選失敗'
     throw createError({ statusCode: 500, statusMessage: msg })
   }
