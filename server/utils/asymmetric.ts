@@ -3,20 +3,40 @@ import crypto from 'node:crypto'
 let cachedPrivKey: crypto.KeyObject | null = null
 let cachedPubKeyPem: string | null = null
 
+/**
+ * 接受 PEM 或純 DER base64 兩種格式：
+ * - PEM：含 `-----BEGIN ... KEY-----` headers
+ * - DER：純 base64 字串（單行、無 headers），對應 PKCS#8 私鑰 / SPKI 公鑰
+ */
+function parseKey(input: string, kind: 'private' | 'public'): crypto.KeyObject {
+  const trimmed = input.trim()
+  if (trimmed.startsWith('-----BEGIN')) {
+    return kind === 'private'
+      ? crypto.createPrivateKey(trimmed)
+      : crypto.createPublicKey(trimmed)
+  }
+  const der = Buffer.from(trimmed, 'base64')
+  return kind === 'private'
+    ? crypto.createPrivateKey({ key: der, format: 'der', type: 'pkcs8' })
+    : crypto.createPublicKey({ key: der, format: 'der', type: 'spki' })
+}
+
 function loadKeys(): void {
   if (cachedPrivKey)
     return
   const config = useRuntimeConfig()
-  const privPem = (config.rsaPrivateKey as string)?.trim()
-  const pubPem = (config.rsaPublicKey as string)?.trim()
-  if (!privPem || !pubPem) {
+  const privInput = (config.rsaPrivateKey as string)?.trim()
+  const pubInput = (config.rsaPublicKey as string)?.trim()
+  if (!privInput || !pubInput) {
     throw createError({
       statusCode: 500,
       statusMessage: 'NUXT_RSA_PRIVATE_KEY / NUXT_RSA_PUBLIC_KEY 未設定',
     })
   }
-  cachedPrivKey = crypto.createPrivateKey(privPem)
-  cachedPubKeyPem = pubPem
+  cachedPrivKey = parseKey(privInput, 'private')
+  // pubkey 端點固定回 PEM 給 client（client 端 importKey 接 SPKI DER 已從 PEM 解出）
+  const pubKeyObj = parseKey(pubInput, 'public')
+  cachedPubKeyPem = pubKeyObj.export({ format: 'pem', type: 'spki' }) as string
 }
 
 export function getPublicKeyPem(): string {
