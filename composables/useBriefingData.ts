@@ -138,14 +138,13 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
       const repos = await fetchFromApi(topic.value.githubQuery, settingsStore.repoCount)
 
       // AI 擴寫 description（有 API key 才執行，失敗不影響主流程）
-      if (settingsStore.currentApiKey) {
+      if (settingsStore.hasApiKey) {
         try {
           const result = await $fetch<{ descriptions: { name: string, description: string }[] }>('/api/ai-repo-describe', {
             method: 'POST',
             body: {
               topicName: topic.value.name,
               repos: repos.map(r => ({ name: r.name, description: r.description, language: r.language, stars: r.stars })),
-              apiKey: settingsStore.currentApiKey,
               model: settingsStore.currentModel,
               provider: settingsStore.provider,
             },

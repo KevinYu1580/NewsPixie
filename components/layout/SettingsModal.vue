@@ -2,6 +2,7 @@
 import type { AIProvider } from '@/types/ai'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { PROVIDER_CONFIGS } from '@/types/ai'
+import { encryptPayload } from '@/utils/crypto-payload'
 
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
@@ -18,10 +19,10 @@ const localFetchTime = ref('')
 const localArticleCount = ref(5)
 const localRepoCount = ref(8)
 const showKey = ref(false)
+const saving = ref(false)
+const saveError = ref<string | null>(null)
+const clearing = ref(false)
 
-const providers = ['anthropic', 'openai', 'gemini'] as const
-
-// 動態模型清單狀態
 const dynamicModels = ref<Record<AIProvider, { id: string, label: string }[]>>({
   anthropic: [],
   openai: [],
@@ -44,14 +45,16 @@ async function fetchModels(provider: AIProvider, apiKey: string) {
   modelsLoading.value[provider] = true
   modelsError.value[provider] = null
   try {
+    const encrypted = await encryptPayload({ apiKey: apiKey.trim() })
     const res = await $fetch<{ models: { id: string, label: string }[] }>('/api/ai-models', {
       method: 'POST',
-      body: { provider, apiKey: apiKey.trim() },
+      body: { provider, encrypted },
     })
     dynamicModels.value[provider] = res.models
     const ids = res.models.map(m => m.id)
-    if (ids.length && !ids.includes(localModels.value[provider])) {
-      localModels.value[provider] = ids[0]
+    const first = ids[0]
+    if (first && !ids.includes(localModels.value[provider])) {
+      localModels.value[provider] = first
     }
   }
   catch (e: unknown) {
@@ -65,30 +68,23 @@ async function fetchModels(provider: AIProvider, apiKey: string) {
 
 function syncLocalSettings() {
   localProvider.value = settingsStore.provider
-  localKeys.value = {
-    anthropic: settingsStore.anthropicKey,
-    openai: settingsStore.openaiKey,
-    gemini: settingsStore.geminiKey,
-  }
+  localKeys.value = { anthropic: '', openai: '', gemini: '' }
+  const meta = settingsStore.sessionMeta
   localModels.value = {
-    anthropic: settingsStore.anthropicModel,
-    openai: settingsStore.openaiModel,
-    gemini: settingsStore.geminiModel,
+    anthropic: meta?.models.anthropic ?? 'claude-haiku-4-5-20251001',
+    openai: meta?.models.openai ?? 'gpt-4o-mini',
+    gemini: meta?.models.gemini ?? 'gemini-3-flash-preview',
   }
   localFetchTime.value = settingsStore.fetchTime
   localArticleCount.value = settingsStore.articleCount
   localRepoCount.value = settingsStore.repoCount
   showKey.value = false
-
-  // 若已有 key，自動拉取模型清單
-  for (const p of providers) {
-    if (localKeys.value[p].trim()) {
-      fetchModels(p, localKeys.value[p])
-    }
-  }
+  saveError.value = null
+  // 已儲存的 provider 仍可呼叫 ai-models 預載清單嗎？需 apiKey 明文，不行。
+  // 故僅清空 dynamicModels，等使用者輸入新 key 再 fetch。
+  dynamicModels.value = { anthropic: [], openai: [], gemini: [] }
 }
 
-// 切換 provider 時若已有 key 且尚未 fetch，自動觸發
 watch(localProvider, (p) => {
   if (localKeys.value[p].trim() && !dynamicModels.value[p].length && !modelsLoading.value[p]) {
     fetchModels(p, localKeys.value[p])
@@ -100,26 +96,74 @@ function openDialog() {
   dialog.value = true
 }
 
-function handleSave() {
-  settingsStore.setProvider(localProvider.value)
-  for (const p of providers) {
-    settingsStore.setProviderKey(p, localKeys.value[p].trim())
-    settingsStore.setProviderModel(p, localModels.value[p])
+async function handleSave() {
+  saving.value = true
+  saveError.value = null
+  try {
+    const meta = settingsStore.sessionMeta
+    // 若使用者本次未輸入該 provider 的 key、保留 server 端原值（不送空字串覆蓋）
+    // 作法：對未填的 provider 不送 key 欄位，server 收到 undefined 視為不更新
+    // 但 save 端點目前要求 keys 物件 — 這裡採折衷：未填的 provider 若 meta 顯示已有 key、視為「保留」需重送
+    // 為簡化，未填者送空字串 → server 會清空。提示使用者重新填入所有想保留的 key。
+    // 可接受：使用者 UX 即「儲存 = 一次寫入完整當前狀態」
+    const payload = {
+      provider: localProvider.value,
+      anthropicKey: localKeys.value.anthropic.trim(),
+      openaiKey: localKeys.value.openai.trim(),
+      geminiKey: localKeys.value.gemini.trim(),
+      anthropicModel: localModels.value.anthropic,
+      openaiModel: localModels.value.openai,
+      geminiModel: localModels.value.gemini,
+    }
+    const hasNewKey = !!(payload.anthropicKey || payload.openaiKey || payload.geminiKey)
+    if (!hasNewKey) {
+      // 保留模式：僅更新 provider/models — 但 server 端要求至少一組 key、不能僅更新 meta
+      // 故若使用者未輸入任何新 key 且 server 已有 key，提示需重新輸入或直接拒絕
+      if (!meta?.hasKey) {
+        saveError.value = t('settings.needAtLeastOneKey')
+        return
+      }
+      saveError.value = t('settings.reenterKeysToSave')
+      return
+    }
+
+    const envelope = await encryptPayload(payload)
+    const res = await $fetch<{ ok: true, meta: typeof meta }>('/api/session/save', {
+      method: 'POST',
+      body: envelope,
+    })
+    if (res.meta)
+      settingsStore.applyMeta(res.meta)
+    settingsStore.setProvider(localProvider.value)
+    settingsStore.setFetchTime(localFetchTime.value)
+    settingsStore.setArticleCount(Number(localArticleCount.value))
+    settingsStore.setRepoCount(Number(localRepoCount.value))
+    settingsStore.dismissLegacyKeyHint()
+    dialog.value = false
   }
-  settingsStore.setFetchTime(localFetchTime.value)
-  settingsStore.setArticleCount(Number(localArticleCount.value))
-  settingsStore.setRepoCount(Number(localRepoCount.value))
-  dialog.value = false
+  catch (e: unknown) {
+    const err = e as { data?: { statusMessage?: string }, message?: string }
+    saveError.value = err?.data?.statusMessage || err?.message || t('settings.saveError')
+  }
+  finally {
+    saving.value = false
+  }
+}
+
+async function handleClearSession() {
+  clearing.value = true
+  try {
+    await settingsStore.clearSession()
+    syncLocalSettings()
+  }
+  finally {
+    clearing.value = false
+  }
 }
 
 const currentConfig = computed(() => PROVIDER_CONFIGS[localProvider.value])
 
-const maskedKey = computed(() => {
-  const k = ({ anthropic: settingsStore.anthropicKey, openai: settingsStore.openaiKey, gemini: settingsStore.geminiKey })[localProvider.value]
-  if (!k)
-    return ''
-  return `${k.slice(0, 6)}••••••••••••••••${k.slice(-4)}`
-})
+const maskedKey = computed(() => settingsStore.sessionMeta?.masked?.[localProvider.value] ?? '')
 </script>
 
 <template>
@@ -147,20 +191,18 @@ const maskedKey = computed(() => {
           <v-btn-toggle
             v-model="localProvider"
             mandatory
-
             density="compact"
             variant="outlined"
-
             color="np-accent"
             class="w-100"
           >
-            <v-btn variant="text" value="anthropic" class=" ">
+            <v-btn variant="text" value="anthropic">
               {{ PROVIDER_CONFIGS.anthropic.label }}
             </v-btn>
             <v-tooltip :text="t('settings.notAvailable')" location="top">
               <template #activator="{ props: ttProps }">
                 <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
-                  <v-btn variant="text" value="openai" class=" " disabled>
+                  <v-btn variant="text" value="openai" disabled>
                     {{ PROVIDER_CONFIGS.openai.label }}
                   </v-btn>
                 </span>
@@ -169,7 +211,7 @@ const maskedKey = computed(() => {
             <v-tooltip :text="t('settings.notAvailable')" location="top">
               <template #activator="{ props: ttProps }">
                 <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
-                  <v-btn variant="text" value="gemini" class="" disabled>
+                  <v-btn variant="text" value="gemini" disabled>
                     {{ PROVIDER_CONFIGS.gemini.label }}
                   </v-btn>
                 </span>
@@ -215,6 +257,18 @@ const maskedKey = computed(() => {
           <p class="text-body-small mt-2">
             {{ t('settings.keyStorageNote') }}
           </p>
+          <div v-if="settingsStore.hasApiKey" class="mt-2">
+            <v-btn
+              :loading="clearing"
+              size="small"
+              variant="text"
+              color="error"
+              prepend-icon="mdi-delete-outline"
+              @click="handleClearSession"
+            >
+              {{ t('settings.clearSession') }}
+            </v-btn>
+          </div>
         </div>
 
         <v-divider class="mb-5" />
@@ -295,7 +349,6 @@ const maskedKey = computed(() => {
             />
           </div>
           <div class="d-flex flex-column ga-2">
-            <!-- 載入中 -->
             <template v-if="modelsLoading[localProvider]">
               <v-skeleton-loader
                 v-for="i in 3"
@@ -305,7 +358,6 @@ const maskedKey = computed(() => {
               />
             </template>
 
-            <!-- 錯誤 -->
             <v-alert
               v-else-if="modelsError[localProvider]"
               type="error"
@@ -324,7 +376,6 @@ const maskedKey = computed(() => {
               </div>
             </v-alert>
 
-            <!-- 未輸入 key -->
             <p
               v-else-if="!localKeys[localProvider]?.trim()"
               class="text-body-2 text-medium-emphasis"
@@ -332,7 +383,6 @@ const maskedKey = computed(() => {
               {{ t('settings.enterKeyFirst') }}
             </p>
 
-            <!-- 動態模型卡片 -->
             <template v-else>
               <v-card
                 v-for="m in dynamicModels[localProvider]"
@@ -358,17 +408,29 @@ const maskedKey = computed(() => {
             </template>
           </div>
         </div>
+
+        <v-alert
+          v-if="saveError"
+          type="error"
+          density="compact"
+          variant="tonal"
+          class="mt-4"
+        >
+          {{ saveError }}
+        </v-alert>
       </v-card-text>
 
       <v-card-actions class="justify-end px-5 pb-5 pt-0">
         <v-btn
           variant="text"
+          :disabled="saving"
           @click="dialog = false"
         >
           {{ t('settings.cancel') }}
         </v-btn>
         <v-btn
           variant="flat"
+          :loading="saving"
           @click="handleSave"
         >
           {{ t('settings.save') }}

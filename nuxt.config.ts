@@ -75,6 +75,9 @@ export default defineNuxtConfig({
   },
 
   runtimeConfig: {
+    sessionSecret: '',
+    rsaPrivateKey: '',
+    rsaPublicKey: '',
     public: {
       encryptSecret: '',
     },
