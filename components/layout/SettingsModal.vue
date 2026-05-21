@@ -8,6 +8,7 @@ const { t } = useI18n()
 const settingsStore = useSettingsStore()
 
 const dialog = ref(false)
+const tab = ref<'ai' | 'briefing'>('ai')
 const localProvider = ref<AIProvider>('anthropic')
 const localKeys = ref<Record<AIProvider, string>>({ anthropic: '', openai: '', gemini: '' })
 const localModels = ref<Record<AIProvider, string>>({
@@ -67,6 +68,7 @@ async function fetchModels(provider: AIProvider, apiKey: string) {
 }
 
 function syncLocalSettings() {
+  tab.value = 'ai'
   localProvider.value = settingsStore.provider
   localKeys.value = { anthropic: '', openai: '', gemini: '' }
   const meta = settingsStore.sessionMeta
@@ -164,6 +166,14 @@ async function handleClearSession() {
 const currentConfig = computed(() => PROVIDER_CONFIGS[localProvider.value])
 
 const maskedKey = computed(() => settingsStore.sessionMeta?.masked?.[localProvider.value] ?? '')
+
+const savedModelLabel = computed(() => {
+  const id = settingsStore.sessionMeta?.models?.[localProvider.value] ?? ''
+  if (!id)
+    return ''
+  const match = PROVIDER_CONFIGS[localProvider.value].models.find(m => m.value === id)
+  return match?.label ?? id
+})
 </script>
 
 <template>
@@ -181,233 +191,259 @@ const maskedKey = computed(() => settingsStore.sessionMeta?.masked?.[localProvid
         {{ t('settings.title') }}
       </v-card-title>
 
-      <v-card-text class="px-5 pb-5">
-        <!-- Provider 選擇 -->
-        <div class="mb-5">
-          <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-            {{ t('settings.aiProvider') }}
-          </div>
+      <v-tabs
+        v-model="tab"
+        density="compact"
+        color="np-accent"
+        grow
+        class="px-5"
+      >
+        <v-tab value="ai">
+          {{ t('settings.tabAi') }}
+        </v-tab>
+        <v-tab value="briefing">
+          {{ t('settings.tabBriefing') }}
+        </v-tab>
+      </v-tabs>
 
-          <v-btn-toggle
-            v-model="localProvider"
-            mandatory
-            density="compact"
-            variant="outlined"
-            color="np-accent"
-            class="w-100"
-          >
-            <v-btn variant="text" value="anthropic">
-              {{ PROVIDER_CONFIGS.anthropic.label }}
-            </v-btn>
-            <v-tooltip :text="t('settings.notAvailable')" location="top">
-              <template #activator="{ props: ttProps }">
-                <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
-                  <v-btn variant="text" value="openai" disabled>
-                    {{ PROVIDER_CONFIGS.openai.label }}
-                  </v-btn>
-                </span>
-              </template>
-            </v-tooltip>
-            <v-tooltip :text="t('settings.notAvailable')" location="top">
-              <template #activator="{ props: ttProps }">
-                <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
-                  <v-btn variant="text" value="gemini" disabled>
-                    {{ PROVIDER_CONFIGS.gemini.label }}
-                  </v-btn>
-                </span>
-              </template>
-            </v-tooltip>
-          </v-btn-toggle>
-        </div>
+      <v-card-text class="px-5 pb-5 pt-5">
+        <v-tabs-window v-model="tab">
+          <v-tabs-window-item value="ai">
+            <!-- Provider 選擇 -->
+            <div class="mb-5">
+              <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
+                {{ t('settings.aiProvider') }}
+              </div>
 
-        <!-- API Key -->
-        <div class="mb-5">
-          <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
-            {{ t('settings.apiKey') }}
-          </div>
-          <div
-            v-if="maskedKey"
-            class="font-mono-label text-caption text-medium-emphasis mb-2"
-          >
-            {{ t('settings.currentKey') }}{{ maskedKey }}
-          </div>
-          <div class="d-flex align-center ga-2">
+              <v-btn-toggle
+                v-model="localProvider"
+                mandatory
+                density="compact"
+                variant="outlined"
+                color="np-accent"
+                class="w-100"
+              >
+                <v-btn variant="text" value="anthropic">
+                  {{ PROVIDER_CONFIGS.anthropic.label }}
+                </v-btn>
+                <v-tooltip :text="t('settings.notAvailable')" location="top">
+                  <template #activator="{ props: ttProps }">
+                    <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
+                      <v-btn variant="text" value="openai" disabled>
+                        {{ PROVIDER_CONFIGS.openai.label }}
+                      </v-btn>
+                    </span>
+                  </template>
+                </v-tooltip>
+                <v-tooltip :text="t('settings.notAvailable')" location="top">
+                  <template #activator="{ props: ttProps }">
+                    <span v-bind="ttProps" class="flex-1-1 d-inline-flex" style="pointer-events: all;">
+                      <v-btn variant="text" value="gemini" disabled>
+                        {{ PROVIDER_CONFIGS.gemini.label }}
+                      </v-btn>
+                    </span>
+                  </template>
+                </v-tooltip>
+              </v-btn-toggle>
+            </div>
+
+            <!-- API Key -->
+            <div class="mb-5">
+              <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
+                {{ t('settings.apiKey') }}
+              </div>
+              <div
+                v-if="maskedKey"
+                class="font-mono-label text-caption text-medium-emphasis mb-2"
+              >
+                {{ t('settings.currentKey') }}{{ maskedKey }}
+              </div>
+              <div class="d-flex align-center ga-2">
+                <v-text-field
+                  v-model="localKeys[localProvider]"
+                  :type="showKey ? 'text' : 'password'"
+                  :placeholder="currentConfig.keyPlaceholder"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  :aria-label="`${currentConfig.label} API Key`"
+                  class="flex-grow-1"
+                  @blur="fetchModels(localProvider, localKeys[localProvider])"
+                >
+                  <template #append-inner>
+                    <v-btn
+                      :icon="showKey ? 'mdi-eye-off' : 'mdi-eye'"
+                      variant="text"
+                      size="x-small"
+                      :aria-label="showKey ? t('settings.hideKey') : t('settings.showKey')"
+                      @click="showKey = !showKey"
+                    />
+                  </template>
+                </v-text-field>
+              </div>
+              <p class="text-body-small mt-2">
+                {{ t('settings.keyStorageNote') }}
+              </p>
+              <div v-if="settingsStore.hasApiKey" class="mt-2">
+                <v-btn
+                  :loading="clearing"
+                  size="small"
+                  variant="text"
+                  color="error"
+                  prepend-icon="mdi-delete-outline"
+                  @click="handleClearSession"
+                >
+                  {{ t('settings.clearSession') }}
+                </v-btn>
+              </div>
+            </div>
+
+            <v-divider class="mb-5" />
+
+            <!-- 模型選擇 -->
+            <div>
+              <div class="d-flex align-center justify-space-between mb-2">
+                <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis">
+                  {{ t('settings.summaryModel') }}
+                </div>
+                <v-btn
+                  v-if="localKeys[localProvider]?.trim()"
+                  :loading="modelsLoading[localProvider]"
+                  icon="mdi-refresh"
+                  variant="text"
+                  size="x-small"
+                  :aria-label="t('settings.refreshModelList')"
+                  @click="fetchModels(localProvider, localKeys[localProvider])"
+                />
+              </div>
+              <div class="d-flex flex-column ga-2">
+                <template v-if="modelsLoading[localProvider]">
+                  <v-skeleton-loader
+                    v-for="i in 3"
+                    :key="i"
+                    type="list-item-two-line"
+                    class="rounded"
+                  />
+                </template>
+
+                <v-alert
+                  v-else-if="modelsError[localProvider]"
+                  type="error"
+                  density="compact"
+                  variant="tonal"
+                >
+                  <div class="d-flex align-center justify-space-between">
+                    <span class="text-body-2">{{ modelsError[localProvider] }}</span>
+                    <v-btn
+                      size="small"
+                      variant="text"
+                      @click="fetchModels(localProvider, localKeys[localProvider])"
+                    >
+                      {{ t('settings.retry') }}
+                    </v-btn>
+                  </div>
+                </v-alert>
+
+                <template v-else-if="!localKeys[localProvider]?.trim()">
+                  <v-card
+                    v-if="savedModelLabel"
+                    variant="tonal"
+                    color="np-accent"
+                  >
+                    <v-card-text class="pa-3">
+                      <div class="text-caption text-medium-emphasis mb-1">
+                        {{ t('settings.currentModel') }}
+                      </div>
+                      <div class="text-body-2 font-weight-medium text-np-accent">
+                        {{ savedModelLabel }}
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                  <p v-else class="text-body-2 text-medium-emphasis">
+                    {{ t('settings.enterKeyFirst') }}
+                  </p>
+                </template>
+
+                <template v-else>
+                  <v-card
+                    v-for="m in dynamicModels[localProvider]"
+                    :key="m.id"
+                    :variant="localModels[localProvider] === m.id ? 'tonal' : 'outlined'"
+                    :color="localModels[localProvider] === m.id ? 'np-accent' : undefined"
+                    class="cursor-pointer"
+                    :aria-pressed="localModels[localProvider] === m.id"
+                    @click="localModels[localProvider] = m.id"
+                  >
+                    <v-card-text class="d-flex align-start ga-3 pa-3">
+                      <v-icon
+                        :icon="localModels[localProvider] === m.id ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
+                        :color="localModels[localProvider] === m.id ? 'np-accent' : 'medium-emphasis'"
+                        size="small"
+                        class="mt-0"
+                      />
+                      <div class="text-body-2 font-weight-medium" :class="localModels[localProvider] === m.id ? 'text-np-accent' : ''">
+                        {{ m.label }}
+                      </div>
+                    </v-card-text>
+                  </v-card>
+                </template>
+              </div>
+            </div>
+          </v-tabs-window-item>
+
+          <v-tabs-window-item value="briefing">
+            <!-- 每日精選設定 -->
+            <div class="text-caption text-medium-emphasis mb-1">
+              {{ t('settings.autoTriggerTime') }}
+            </div>
             <v-text-field
-              v-model="localKeys[localProvider]"
-              :type="showKey ? 'text' : 'password'"
-              :placeholder="currentConfig.keyPlaceholder"
+              v-model="localFetchTime"
+              type="time"
               density="compact"
               variant="outlined"
               hide-details
-              :aria-label="`${currentConfig.label} API Key`"
-              class="flex-grow-1"
-              @blur="fetchModels(localProvider, localKeys[localProvider])"
-            >
-              <template #append-inner>
-                <v-btn
-                  :icon="showKey ? 'mdi-eye-off' : 'mdi-eye'"
-                  variant="text"
-                  size="x-small"
-                  :aria-label="showKey ? t('settings.hideKey') : t('settings.showKey')"
-                  @click="showKey = !showKey"
-                />
-              </template>
-            </v-text-field>
-          </div>
-          <p class="text-body-small mt-2">
-            {{ t('settings.keyStorageNote') }}
-          </p>
-          <div v-if="settingsStore.hasApiKey" class="mt-2">
-            <v-btn
-              :loading="clearing"
-              size="small"
-              variant="text"
-              color="error"
-              prepend-icon="mdi-delete-outline"
-              @click="handleClearSession"
-            >
-              {{ t('settings.clearSession') }}
-            </v-btn>
-          </div>
-        </div>
-
-        <v-divider class="mb-5" />
-
-        <!-- 每日精選設定 -->
-        <div class="mb-5">
-          <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-3">
-            {{ t('settings.dailyBriefingSettings') }}
-          </div>
-
-          <div class="text-caption text-medium-emphasis mb-1">
-            {{ t('settings.autoTriggerTime') }}
-          </div>
-          <v-text-field
-            v-model="localFetchTime"
-            type="time"
-            density="compact"
-            variant="outlined"
-            hide-details
-            :aria-label="t('settings.autoTriggerTime')"
-            class="mb-3"
-          />
-
-          <p class="text-body-small mt-2">
-            {{ t('settings.autoTriggerNote') }}
-          </p>
-
-          <div class="d-flex ga-3">
-            <div class="flex-1-1">
-              <div class="text-caption text-medium-emphasis mb-1">
-                {{ t('settings.articleCount') }}
-              </div>
-              <v-text-field
-                v-model.number="localArticleCount"
-                type="number"
-                min="4"
-                max="10"
-                density="compact"
-                variant="outlined"
-                hide-details
-                :aria-label="t('settings.articleCount')"
-              />
-            </div>
-            <div class="flex-1-1">
-              <div class="text-caption text-medium-emphasis mb-1">
-                {{ t('settings.repoCount') }}
-              </div>
-              <v-text-field
-                v-model.number="localRepoCount"
-                type="number"
-                min="4"
-                max="10"
-                density="compact"
-                variant="outlined"
-                hide-details
-                :aria-label="t('settings.repoCount')"
-              />
-            </div>
-          </div>
-        </div>
-
-        <v-divider class="mb-5" />
-
-        <!-- 模型選擇 -->
-        <div>
-          <div class="d-flex align-center justify-space-between mb-2">
-            <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis">
-              {{ t('settings.summaryModel') }}
-            </div>
-            <v-btn
-              v-if="localKeys[localProvider]?.trim()"
-              :loading="modelsLoading[localProvider]"
-              icon="mdi-refresh"
-              variant="text"
-              size="x-small"
-              :aria-label="t('settings.refreshModelList')"
-              @click="fetchModels(localProvider, localKeys[localProvider])"
+              :aria-label="t('settings.autoTriggerTime')"
+              class="mb-3"
             />
-          </div>
-          <div class="d-flex flex-column ga-2">
-            <template v-if="modelsLoading[localProvider]">
-              <v-skeleton-loader
-                v-for="i in 3"
-                :key="i"
-                type="list-item-two-line"
-                class="rounded"
-              />
-            </template>
 
-            <v-alert
-              v-else-if="modelsError[localProvider]"
-              type="error"
-              density="compact"
-              variant="tonal"
-            >
-              <div class="d-flex align-center justify-space-between">
-                <span class="text-body-2">{{ modelsError[localProvider] }}</span>
-                <v-btn
-                  size="small"
-                  variant="text"
-                  @click="fetchModels(localProvider, localKeys[localProvider])"
-                >
-                  {{ t('settings.retry') }}
-                </v-btn>
-              </div>
-            </v-alert>
-
-            <p
-              v-else-if="!localKeys[localProvider]?.trim()"
-              class="text-body-2 text-medium-emphasis"
-            >
-              {{ t('settings.enterKeyFirst') }}
+            <p class="text-body-small mt-2 mb-5">
+              {{ t('settings.autoTriggerNote') }}
             </p>
 
-            <template v-else>
-              <v-card
-                v-for="m in dynamicModels[localProvider]"
-                :key="m.id"
-                :variant="localModels[localProvider] === m.id ? 'tonal' : 'outlined'"
-                :color="localModels[localProvider] === m.id ? 'np-accent' : undefined"
-                class="cursor-pointer"
-                :aria-pressed="localModels[localProvider] === m.id"
-                @click="localModels[localProvider] = m.id"
-              >
-                <v-card-text class="d-flex align-start ga-3 pa-3">
-                  <v-icon
-                    :icon="localModels[localProvider] === m.id ? 'mdi-radiobox-marked' : 'mdi-radiobox-blank'"
-                    :color="localModels[localProvider] === m.id ? 'np-accent' : 'medium-emphasis'"
-                    size="small"
-                    class="mt-0"
-                  />
-                  <div class="text-body-2 font-weight-medium" :class="localModels[localProvider] === m.id ? 'text-np-accent' : ''">
-                    {{ m.label }}
-                  </div>
-                </v-card-text>
-              </v-card>
-            </template>
-          </div>
-        </div>
+            <div class="d-flex ga-3">
+              <div class="flex-1-1">
+                <div class="text-caption text-medium-emphasis mb-1">
+                  {{ t('settings.articleCount') }}
+                </div>
+                <v-text-field
+                  v-model.number="localArticleCount"
+                  type="number"
+                  min="4"
+                  max="10"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  :aria-label="t('settings.articleCount')"
+                />
+              </div>
+              <div class="flex-1-1">
+                <div class="text-caption text-medium-emphasis mb-1">
+                  {{ t('settings.repoCount') }}
+                </div>
+                <v-text-field
+                  v-model.number="localRepoCount"
+                  type="number"
+                  min="4"
+                  max="10"
+                  density="compact"
+                  variant="outlined"
+                  hide-details
+                  :aria-label="t('settings.repoCount')"
+                />
+              </div>
+            </div>
+          </v-tabs-window-item>
+        </v-tabs-window>
 
         <v-alert
           v-if="saveError"

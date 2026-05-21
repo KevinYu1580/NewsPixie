@@ -566,7 +566,7 @@ pages/index.vue
 
 **AppSidebar** — 主題清單（`TopicItem` × N）、新增按鈕、管理按鈕；透過 emit 將 CRUD 操作傳至 `pages/index.vue` → `topicsStore`。文字（標題、aria-label、按鈕內文）透過 `useI18n().t()` 對應 `sidebar.*` key。注意 `@add` event handler 參數命名為 `topic` 以避免與 i18n 的 `t` 衝突。
 
-**SettingsModal** — 負責 API Key 輸入、每日觸發時間、精選篇數、Repo 數、模型選擇。採本地 state 暫存，點「儲存」後統一 commit 至 [settingsStore](#52-settingsstore)。API Key 為選填，不填亦可儲存（僅影響 BriefingFeed 是否顯示內容）。
+**SettingsModal** — 以 `v-tabs` 分兩頁：**AI 設定**（Provider 切換、API Key、AI 摘要模型）與**每日精選**（自動觸發時間、精選篇數、Repo 數）；開窗時固定回到 AI 設定頁（`tab` ref）。採本地 state 暫存，點「儲存」後統一 commit 至 [settingsStore](#52-settingsstore)。API Key 為選填，不填亦可儲存（僅影響 BriefingFeed 是否顯示內容）。「AI 摘要模型」區塊在本次未輸入新 key 時，若已有儲存的 key 則顯示目前已儲存的模型（label 由 `PROVIDER_CONFIGS` 對照 model id，找不到則顯示 raw id），否則提示先輸入 key；輸入新 key 後才以動態清單呈現可選卡片。
 
 ### 8.2 Content 層
 

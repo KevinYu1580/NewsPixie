@@ -8,6 +8,8 @@
   "settings": {
     "openSettings": "Open settings",
     "title": "Settings",
+    "tabAi": "AI",
+    "tabBriefing": "Daily Briefing",
     "aiProvider": "AI Provider",
     "notAvailable": "Not available",
     "apiKey": "API Key",
@@ -21,7 +23,6 @@
     "needAtLeastOneKey": "Please enter at least one API key",
     "reenterKeysToSave": "To keep existing keys, re-enter them before saving (each save fully overwrites the stored set).",
     "saveError": "Save failed, please try again later",
-    "dailyBriefingSettings": "Daily Briefing Settings",
     "autoTriggerTime": "Auto-trigger time",
     "autoTriggerNote": "After the app opens, if the trigger time has passed and today's fetch hasn't run, it will execute once automatically.",
     "articleCount": "Articles per topic (4–10)",
@@ -31,6 +32,7 @@
     "modelListError": "Failed to fetch model list",
     "retry": "Retry",
     "enterKeyFirst": "Enter your API Key to load available models",
+    "currentModel": "Current model",
     "cancel": "Cancel",
     "save": "Save"
   },

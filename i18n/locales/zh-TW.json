@@ -8,6 +8,8 @@
   "settings": {
     "openSettings": "開啟設定",
     "title": "設定",
+    "tabAi": "AI 設定",
+    "tabBriefing": "每日精選",
     "aiProvider": "AI Provider",
     "notAvailable": "尚未開放",
     "apiKey": "API Key",
@@ -21,7 +23,6 @@
     "needAtLeastOneKey": "請至少輸入一組 API Key",
     "reenterKeysToSave": "為保留現有 Key、請重新輸入該 provider 的 Key 後再儲存（一次提交即一次完整覆寫）",
     "saveError": "儲存失敗，請稍後再試",
-    "dailyBriefingSettings": "每日精選設定",
     "autoTriggerTime": "自動觸發時間",
     "autoTriggerNote": "App 開啟後若已過觸發時間且當日尚未抓取，將自動執行一次。",
     "articleCount": "精選篇數（4–10）",
@@ -31,6 +32,7 @@
     "modelListError": "無法獲取模型清單",
     "retry": "重試",
     "enterKeyFirst": "請先輸入 API Key 以載入可用模型",
+    "currentModel": "目前模型",
     "cancel": "取消",
     "save": "儲存"
   },
