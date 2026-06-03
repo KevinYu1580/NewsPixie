@@ -70,7 +70,7 @@ function handleSubmit() {
     githubKeywords: githubKeywords.value,
     jinaUrls: jinaUrls.value,
     color: color.value,
-    enabled: true,
+    enabled: props.initial?.enabled ?? true,
   })
 }
 </script>
