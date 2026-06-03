@@ -165,7 +165,7 @@ interface Topic {
   createdAt: number        // Unix timestamp
 }
 
-type TopicColor = 'violet' | 'emerald' | 'blue' | 'orange' | 'rose' | 'cyan'
+type TopicColor = 'violet' | 'indigo' | 'blue' | 'cyan' | 'emerald' | 'orange' | 'rose' | 'red'
 ```
 
 `TOPIC_COLORS` 將 `TopicColor` 映射至 Vuetify 色彩名稱與 HEX 值，用於 UI 渲染（側邊欄標記、頁面標題色彩等）。

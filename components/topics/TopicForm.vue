@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const COLOR_OPTIONS: TopicColor[] = ['violet', 'emerald', 'blue', 'orange', 'rose', 'cyan']
+const COLOR_OPTIONS: TopicColor[] = ['violet', 'indigo', 'blue', 'cyan', 'emerald', 'orange', 'rose', 'red']
 const SLUG_WHITESPACE_RE = /\s+/g
 
 const tab = ref<'briefing' | 'github'>('briefing')
@@ -99,7 +99,7 @@ function handleSubmit() {
         <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
           {{ t('topicForm.color') }}
         </div>
-        <div class="d-flex ga-2">
+        <div class="d-flex flex-wrap ga-2">
           <button
             v-for="c in COLOR_OPTIONS"
             :key="c"
