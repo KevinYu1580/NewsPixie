@@ -154,15 +154,15 @@ NewsPixie/
 
 ```ts
 interface Topic {
-  id: string           // 唯一識別，由 generateId() 產生
-  name: string         // 顯示名稱，e.g. 'AI & 機器學習'
-  slug: string         // URL-friendly 識別，e.g. 'ai-ml'
-  keywords: string[]   // AI 精選時的過濾關鍵字
-  githubQuery: string  // 傳入 GitHub Search API 的查詢字串
-  jinaUrls: string[]   // 透過 Jina Reader 抓取的網站 URL 列表
-  color: TopicColor    // UI 色彩標記（見下方 TOPIC_COLORS）
-  enabled: boolean     // 是否啟用
-  createdAt: number    // Unix timestamp
+  id: string               // 唯一識別，由 generateId() 產生
+  name: string             // 顯示名稱，e.g. 'AI & 機器學習'
+  slug: string             // URL-friendly 識別，e.g. 'ai-ml'
+  keywords: string[]       // 每日精選 AI 過濾關鍵字（傳給 ai-curate）
+  githubKeywords: string[] // GitHub Search chips（implicit AND；含空白自動加引號；可輸入 qualifier 如 language:python）
+  jinaUrls: string[]       // 透過 Jina Reader 抓取的網站 URL 列表
+  color: TopicColor        // UI 色彩標記（見下方 TOPIC_COLORS）
+  enabled: boolean         // 是否啟用
+  createdAt: number        // Unix timestamp
 }
 
 type TopicColor = 'violet' | 'emerald' | 'blue' | 'orange' | 'rose' | 'cyan'
@@ -602,7 +602,7 @@ TopicsTopicManagerModal
 
 **TopicManagerModal** 採「本地編輯後統一儲存」模式：開啟 dialog 時 deep clone `topics` 到 `localTopics`，所有 CRUD 操作在 local state 完成，點「儲存」才 diff 並批次 emit `add`/`update`/`delete` 事件。
 
-**TopicForm** — 新增與編輯共用，接收可選 `initial` prop（有則為編輯模式）。
+**TopicForm** — 新增與編輯共用，接收可選 `initial` prop（有則為編輯模式）。版面採 v-tabs 分頁：頂部固定共通欄位（`name`、`color`），下方兩個 Tab：「每日精選」（`jinaUrls` + `keywords`）與「GitHub Trending」（`githubKeywords` chip 輸入，可輸入純關鍵字或 GitHub qualifier 如 `language:python`、`stars:>100`），對應兩條互相獨立的 pipeline。
 
 ---
 
@@ -662,7 +662,10 @@ TopicsTopicManagerModal
 ┌─────────────────────────────────────────────────────────────────┐
 │  useGithubTrending.fetch_()                                     │
 │                                                                 │
-│  1. GET /api/github-trending?query={topic.githubQuery}          │
+│  0. composeQuery(githubQuery, githubKeywords)                   │
+│     └─> implicit AND 拼接（含空白關鍵字自動加引號）              │
+│                                                                 │
+│  1. GET /api/github-trending?query={composed}                   │
 │     └─> GitHub Search API (created:>7天前, sort:stars)          │
 │         └─> RepoItem[]                                          │
 │                                                                 │
@@ -673,6 +676,11 @@ TopicsTopicManagerModal
 │  3. saveCache() → localStorage                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
+
+`buildGithubQuery()` 範例：
+- `githubKeywords: ['LLM', 'AI agent', 'language:python']`
+- 最終送 GitHub：`LLM "AI agent" language:python created:>{7天前}`
+- `githubKeywords` 為空 → 送空字串（GitHub 回傳全域 trending，無針對性）
 
 ---
 

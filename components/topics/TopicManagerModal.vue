@@ -29,6 +29,7 @@ watch(dialog, (open) => {
     localTopics.value = props.topics.map(topic => ({
       ...topic,
       keywords: [...topic.keywords],
+      githubKeywords: [...(topic.githubKeywords ?? [])],
       jinaUrls: [...topic.jinaUrls],
     }))
     mode.value = props.initialMode ?? 'list'
@@ -60,6 +61,7 @@ function addLocalTopic(topic: Omit<Topic, 'id' | 'createdAt'>) {
     id: `local-${Date.now()}-${localTopicCounter++}`,
     createdAt: Date.now(),
     keywords: [...topic.keywords],
+    githubKeywords: [...(topic.githubKeywords ?? [])],
     jinaUrls: [...topic.jinaUrls],
   })
   mode.value = props.initialMode === 'add' ? 'add' : 'list'
@@ -69,12 +71,16 @@ function updateLocalTopic(id: string, updates: Partial<Omit<Topic, 'id' | 'creat
   const idx = localTopics.value.findIndex(topic => topic.id === id)
   if (idx === -1)
     return
+  const current = localTopics.value[idx]
+  if (!current)
+    return
 
   localTopics.value[idx] = {
-    ...localTopics.value[idx],
+    ...current,
     ...updates,
-    keywords: updates.keywords ? [...updates.keywords] : localTopics.value[idx].keywords,
-    jinaUrls: updates.jinaUrls ? [...updates.jinaUrls] : localTopics.value[idx].jinaUrls,
+    keywords: updates.keywords ? [...updates.keywords] : current.keywords,
+    githubKeywords: updates.githubKeywords ? [...updates.githubKeywords] : (current.githubKeywords ?? []),
+    jinaUrls: updates.jinaUrls ? [...updates.jinaUrls] : current.jinaUrls,
   }
   mode.value = 'list'
 }
@@ -87,10 +93,10 @@ function deleteLocalTopic(id: string) {
 function hasTopicChanged(original: Topic, current: Topic) {
   return original.name !== current.name
     || original.slug !== current.slug
-    || original.githubQuery !== current.githubQuery
     || original.color !== current.color
     || original.enabled !== current.enabled
     || JSON.stringify(original.keywords) !== JSON.stringify(current.keywords)
+    || JSON.stringify(original.githubKeywords ?? []) !== JSON.stringify(current.githubKeywords ?? [])
     || JSON.stringify(original.jinaUrls) !== JSON.stringify(current.jinaUrls)
 }
 
@@ -111,6 +117,7 @@ function saveChanges() {
       emit('add', {
         ...topicData,
         keywords: [...topicData.keywords],
+        githubKeywords: [...(topicData.githubKeywords ?? [])],
         jinaUrls: [...topicData.jinaUrls],
       })
       return
@@ -121,7 +128,7 @@ function saveChanges() {
         name: topic.name,
         slug: topic.slug,
         keywords: [...topic.keywords],
-        githubQuery: topic.githubQuery,
+        githubKeywords: [...(topic.githubKeywords ?? [])],
         jinaUrls: [...topic.jinaUrls],
         color: topic.color,
         enabled: topic.enabled,

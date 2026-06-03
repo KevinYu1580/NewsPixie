@@ -2,10 +2,10 @@ export interface Topic {
   id: string;
   name: string;
   slug: string;
-  /** AI 精選過濾關鍵字 */
+  /** AI 精選過濾關鍵字（每日精選 pipeline 用，傳給 ai-curate） */
   keywords: string[];
-  /** GitHub Search API 查詢字串 */
-  githubQuery: string;
+  /** GitHub Search 關鍵字 + qualifier chips（implicit AND；含空白自動加引號） */
+  githubKeywords: string[];
   /** 透過 Jina 抓取的任意網站 URL 列表 */
   jinaUrls: string[];
   /** 色彩名稱，e.g. 'violet' | 'emerald' | 'blue' */

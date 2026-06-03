@@ -77,10 +77,14 @@
   "topicForm": {
     "topicName": "主題名稱",
     "color": "顏色",
+    "tabBriefing": "每日精選",
+    "tabGithub": "GitHub Trending",
     "filterKeywords": "過濾關鍵字",
-    "githubQuery": "GitHub 搜尋詞",
+    "githubKeywords": "搜尋關鍵字",
     "newsSourceUrl": "新聞來源網址",
     "keywordPlaceholder": "輸入關鍵字後按 Enter",
+    "githubKeywordPlaceholder": "關鍵字或 qualifier，如 language:python",
+    "urlPlaceholder": "輸入任一新聞來源網址",
     "addBtn": "新增",
     "joinBtn": "加入",
     "save": "儲存",
@@ -88,6 +92,7 @@
     "removeKeywordAria": "移除關鍵字 {kw}",
     "removeUrlAria": "移除 {url}",
     "keywordsTooltip": "AI 引擎會優先分析包含這些關鍵字的文章，建議輸入與主題相關的詞彙",
+    "githubKeywordsTooltip": "多個詞以隱式 AND 組合送 GitHub Search。含空白的 phrase 自動加引號。可直接輸入 GitHub qualifier，例如 language:python、stars:>100、topic:llm",
     "urlsTooltip": "為新聞資料來源，建議輸入包含文章列表的網站以便最佳化 AI 摘要效果",
     "colorSelectAria": "選擇 {color} 顏色"
   },

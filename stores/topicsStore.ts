@@ -39,5 +39,18 @@ export const useTopicsStore = defineStore('topics', () => {
   persist: {
     key: 'newspixie-topics',
     pick: ['topics', 'activeTopicId'],
+    afterHydrate: (ctx) => {
+      const store = ctx.store as unknown as { topics: (Topic & { githubQuery?: string })[] }
+      if (!Array.isArray(store.topics))
+        return
+      store.topics = store.topics.map((t) => {
+        const hasKeywords = Array.isArray(t.githubKeywords) && t.githubKeywords.length > 0
+        const githubKeywords = hasKeywords
+          ? t.githubKeywords
+          : t.githubQuery ? [t.githubQuery] : []
+        const { githubQuery: _removed, ...rest } = t
+        return { ...rest, githubKeywords }
+      })
+    },
   },
 })

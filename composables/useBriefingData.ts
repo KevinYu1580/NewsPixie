@@ -86,6 +86,17 @@ function pruneOldCache(): void {
   keysToRemove.forEach(k => localStorage.removeItem(k))
 }
 
+const WHITESPACE_RE = /\s/
+
+/** 把 githubKeywords chips 組成 GitHub Search query 字串（含空白自動加引號） */
+function buildGithubQuery(githubKeywords: string[]): string {
+  return githubKeywords
+    .map(k => k.trim())
+    .filter(Boolean)
+    .map(k => (WHITESPACE_RE.test(k) ? `"${k}"` : k))
+    .join(' ')
+}
+
 async function fetchFromApi(query: string, limit: number): Promise<RepoItem[]> {
   const res = await fetch(`/api/github-trending?query=${encodeURIComponent(query)}&limit=${limit}`)
   if (!res.ok) {
@@ -135,7 +146,8 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
     isError.value = false
     error.value = null
     try {
-      const repos = await fetchFromApi(topic.value.githubQuery, settingsStore.repoCount)
+      const query = buildGithubQuery(topic.value.githubKeywords ?? [])
+      const repos = await fetchFromApi(query, settingsStore.repoCount)
 
       // AI 擴寫 description（有 API key 才執行，失敗不影響主流程）
       if (settingsStore.hasApiKey) {

@@ -77,10 +77,14 @@
   "topicForm": {
     "topicName": "Topic name",
     "color": "Color",
+    "tabBriefing": "Daily Briefing",
+    "tabGithub": "GitHub Trending",
     "filterKeywords": "Filter keywords",
-    "githubQuery": "GitHub search query",
+    "githubKeywords": "Search keywords",
     "newsSourceUrl": "News source URLs",
     "keywordPlaceholder": "Type a keyword then press Enter",
+    "githubKeywordPlaceholder": "Keyword or qualifier, e.g. language:python",
+    "urlPlaceholder": "Enter a news source URL",
     "addBtn": "Add",
     "joinBtn": "Add",
     "save": "Save",
@@ -88,6 +92,7 @@
     "removeKeywordAria": "Remove keyword {kw}",
     "removeUrlAria": "Remove {url}",
     "keywordsTooltip": "The AI engine will prioritize articles containing these keywords. Recommended: topic-related terms.",
+    "githubKeywordsTooltip": "Multiple terms are combined with implicit AND and sent to GitHub Search. Phrases with spaces are auto-quoted. GitHub qualifiers work too — e.g. language:python, stars:>100, topic:llm",
     "urlsTooltip": "News data sources. Recommended: pages with article listings for best AI summarization results.",
     "colorSelectAria": "Select {color} color"
   },
