@@ -2,7 +2,7 @@ import { fetchGithubTrending } from '@/server/utils/github'
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
-  const q = String(query.query ?? 'developer-tools')
+  const q = String(query.query || 'developer-tools')
   const limit = Number(query.limit ?? 8)
 
   try {
