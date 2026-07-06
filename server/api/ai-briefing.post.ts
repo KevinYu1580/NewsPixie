@@ -8,13 +8,7 @@ interface BriefingRequest {
 }
 
 export default defineEventHandler(async (event) => {
-  let body: BriefingRequest
-  try {
-    body = await readBody<BriefingRequest>(event)
-  }
-  catch {
-    throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
-  }
+  const body = await readJsonBody<BriefingRequest>(event)
 
   const { topicName, headlines } = body
 
@@ -49,9 +43,6 @@ ${headlineText}
     return { summary, generatedAt: new Date().toISOString() }
   }
   catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error)
-      throw error
-    const msg = error instanceof Error ? error.message : 'AI 摘要生成失敗'
-    throw createError({ statusCode: 500, statusMessage: msg })
+    throw toApiError(error, 'AI 摘要生成失敗')
   }
 })

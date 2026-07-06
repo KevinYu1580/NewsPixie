@@ -97,9 +97,6 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
     <ContentSection
       :title="t('briefingFeed.dailyBriefing')"
       :count="articles?.length ?? 0"
-      :is-loading="false"
-      :is-empty="false"
-      :skeleton-count="settingsStore.articleCount"
     >
       <template #actions>
         <span v-if="generatedAt" class="text-caption text-medium-emphasis">
@@ -132,8 +129,6 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
     <ContentSection
       :title="t('briefingFeed.trendingRepos')"
       :count="repos?.length ?? 0"
-      :is-loading="false"
-      :is-empty="false"
     >
       <template #actions>
         <span v-if="repoCachedAt" class="text-caption text-medium-emphasis">

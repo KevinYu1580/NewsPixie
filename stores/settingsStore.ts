@@ -1,8 +1,8 @@
-import { defineStore } from 'pinia'
 import type { AIModel, AIProvider } from '@/types/ai'
+import { defineStore } from 'pinia'
 import { getEncryptStorage } from '@/plugins/encrypt-storage'
 
-export type { AIProvider, AIModel }
+export type { AIModel, AIProvider }
 export type ThemeName = 'dark' | 'light'
 
 export interface SessionMeta {
@@ -175,4 +175,3 @@ export const useSettingsStore = defineStore('settings', () => {
     pick: ['provider', 'themeName', 'mobileDrawerOpen', 'fetchTime', 'articleCount', 'repoCount'],
   },
 })
-

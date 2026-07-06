@@ -1,8 +1,8 @@
+import type { AIProvider } from '~/types/ai'
 import { decryptEnvelope } from '~/server/utils/asymmetric'
+import { AI_PROVIDERS } from '~/types/ai'
 
 const OPENAI_O_SERIES = /^o\d/
-
-type AIProvider = 'anthropic' | 'openai' | 'gemini'
 
 interface ModelsRequestBody {
   provider: AIProvider
@@ -15,18 +15,11 @@ interface ModelOption {
 }
 
 export default defineEventHandler(async (event) => {
-  let body: ModelsRequestBody
-  try {
-    body = await readBody<ModelsRequestBody>(event)
-  }
-  catch {
-    throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
-  }
+  const body = await readJsonBody<ModelsRequestBody>(event)
 
   const { provider, encrypted } = body
 
-  const validProviders: AIProvider[] = ['anthropic', 'openai', 'gemini']
-  if (!validProviders.includes(provider)) {
+  if (!AI_PROVIDERS.includes(provider)) {
     throw createError({ statusCode: 400, statusMessage: '無效的 provider' })
   }
 
@@ -110,10 +103,6 @@ export default defineEventHandler(async (event) => {
     return { models }
   }
   catch (error: unknown) {
-    if (error && typeof error === 'object' && 'statusCode' in error) {
-      throw error
-    }
-    const msg = error instanceof Error ? error.message : '無法獲取模型清單'
-    throw createError({ statusCode: 502, statusMessage: msg })
+    throw toApiError(error, '無法獲取模型清單', 502)
   }
 })

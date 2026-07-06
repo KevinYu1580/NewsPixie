@@ -2,12 +2,6 @@
 import type { Topic } from '@/types/topic'
 import { TOPIC_COLORS } from '@/types/topic'
 
-const { t } = useI18n()
-
-export type TopicModalInitialMode = 'list' | 'add'
-
-type ModalMode = 'list' | 'add' | { type: 'edit', topic: Topic } | { type: 'delete', topic: Topic }
-
 const props = defineProps<{
   topics: Topic[]
   initialMode?: TopicModalInitialMode
@@ -18,6 +12,12 @@ const emit = defineEmits<{
   update: [id: string, updates: Partial<Omit<Topic, 'id' | 'createdAt'>>]
   delete: [id: string]
 }>()
+
+const { t } = useI18n()
+
+export type TopicModalInitialMode = 'list' | 'add'
+
+type ModalMode = 'list' | 'add' | { type: 'edit', topic: Topic } | { type: 'delete', topic: Topic }
 
 const dialog = defineModel<boolean>({ default: false })
 const mode = ref<ModalMode>(props.initialMode ?? 'list')
@@ -41,12 +41,19 @@ watch(dialog, (open) => {
   }
 })
 
+const editingTopic = computed(() =>
+  typeof mode.value === 'object' && mode.value.type === 'edit' ? mode.value.topic : null,
+)
+const deletingTopic = computed(() =>
+  typeof mode.value === 'object' && mode.value.type === 'delete' ? mode.value.topic : null,
+)
+
 const title = computed(() => {
   if (mode.value === 'list')
     return t('topicManager.manage')
   if (mode.value === 'add')
     return t('topicManager.add')
-  if (typeof mode.value === 'object' && mode.value.type === 'edit')
+  if (editingTopic.value)
     return t('topicManager.edit')
   return t('topicManager.delete')
 })
@@ -204,23 +211,23 @@ function saveChanges() {
 
         <!-- 編輯表單 -->
         <TopicsTopicForm
-          v-if="typeof mode === 'object' && mode.type === 'edit'"
-          :key="(mode as { type: 'edit'; topic: Topic }).topic.id"
-          :initial="(mode as { type: 'edit'; topic: Topic }).topic"
+          v-if="editingTopic"
+          :key="editingTopic.id"
+          :initial="editingTopic"
           :submit-label="t('topicManager.save')"
-          @submit="(data) => updateLocalTopic((mode as { type: 'edit'; topic: Topic }).topic.id, data)"
+          @submit="(data) => updateLocalTopic(editingTopic!.id, data)"
           @cancel="mode = 'list'"
         />
 
         <!-- 刪除確認 -->
         <div
-          v-if="typeof mode === 'object' && mode.type === 'delete'"
+          v-if="deletingTopic"
           class="d-flex flex-column ga-4"
         >
           <p class="text-body-2 text-medium-emphasis">
             {{ t('topicManager.deleteConfirm') }}
             <span class="font-weight-medium text-high-emphasis">
-              「{{ (mode as { type: 'delete'; topic: Topic }).topic.name }}」
+              「{{ deletingTopic.name }}」
             </span>？<br>{{ t('topicManager.deleteWarning') }}
           </p>
           <div class="d-flex justify-end ga-2">
@@ -230,7 +237,7 @@ function saveChanges() {
             <v-btn
               variant="flat"
               color="error"
-              @click="deleteLocalTopic((mode as { type: 'delete'; topic: Topic }).topic.id)"
+              @click="deleteLocalTopic(deletingTopic!.id)"
             >
               {{ t('topicManager.deleteBtn') }}
             </v-btn>

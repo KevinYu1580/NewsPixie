@@ -1,4 +1,5 @@
-export type AIProvider = 'anthropic' | 'openai' | 'gemini'
+export const AI_PROVIDERS = ['anthropic', 'openai', 'gemini'] as const
+export type AIProvider = (typeof AI_PROVIDERS)[number]
 
 export type AIModel = string
 

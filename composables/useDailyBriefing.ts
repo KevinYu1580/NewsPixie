@@ -1,7 +1,7 @@
 import type { Topic } from '@/types/topic'
 import { MAX_CACHE_DAYS } from '@/constants'
 import { useSettingsStore } from '@/stores/settingsStore'
-import { pruneLocalStorageCache, todayStr } from '@/utils/utils'
+import { getErrorMessage, loadTodayCache, saveTodayCache, todayStr } from '@/utils/utils'
 
 const CACHE_PREFIX = 'newspixie-daily'
 
@@ -18,51 +18,8 @@ export interface DailyBriefingCache {
   generatedAt: string
 }
 
-function cacheKey(topicId: string, date: string): string {
-  return `${CACHE_PREFIX}-${topicId}-${date}`
-}
-
 function loadCache(topicId: string): DailyBriefingCache | null {
-  if (typeof window === 'undefined')
-    return null
-  try {
-    const raw = localStorage.getItem(cacheKey(topicId, todayStr()))
-    if (!raw)
-      return null
-    return JSON.parse(raw) as DailyBriefingCache
-  }
-  catch {
-    return null
-  }
-}
-
-function saveCache(data: DailyBriefingCache): void {
-  if (typeof window === 'undefined')
-    return
-  localStorage.setItem(cacheKey(data.topicId, data.date), JSON.stringify(data))
-  pruneLocalStorageCache(CACHE_PREFIX, MAX_CACHE_DAYS)
-}
-
-function getErrorMessage(error: unknown): string | null {
-  if (!error || typeof error !== 'object')
-    return null
-
-  const err = error as {
-    statusMessage?: string
-    message?: string
-    data?: { statusMessage?: string, message?: string, error?: string }
-    response?: { _data?: { statusMessage?: string, message?: string, error?: string } }
-  }
-
-  return err.data?.statusMessage
-    ?? err.response?._data?.statusMessage
-    ?? err.data?.message
-    ?? err.response?._data?.message
-    ?? err.statusMessage
-    ?? err.data?.error
-    ?? err.response?._data?.error
-    ?? err.message
-    ?? null
+  return loadTodayCache<DailyBriefingCache>(CACHE_PREFIX, topicId)
 }
 
 /**
@@ -212,12 +169,13 @@ export function useDailyBriefing(topic: Ref<Topic | null>) {
       generatedAt.value = now
       stage.value = 'done'
 
-      saveCache({
+      const entry: DailyBriefingCache = {
         topicId: topicValue.id,
         date: todayStr(),
         articles: withImages,
         generatedAt: now,
-      })
+      }
+      saveTodayCache(CACHE_PREFIX, topicValue.id, entry, MAX_CACHE_DAYS)
     }
     catch (err) {
       error.value = getErrorMessage(err) ?? t('error.briefingFailed')

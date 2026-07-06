@@ -4,7 +4,8 @@ let instance: EncryptStorage | null = null
 
 /** 僅在 plugin 初始化時呼叫，設定 secret 並建立 singleton */
 export function initEncryptStorage(secret: string): void {
-  if (instance) return
+  if (instance)
+    return
   if (!secret || secret.length < 10) {
     console.warn('[encrypt-storage] NUXT_PUBLIC_ENCRYPT_SECRET 未設定或長度不足 10 字元，settingsStore 將以明文儲存')
     return

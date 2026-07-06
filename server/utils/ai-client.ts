@@ -1,4 +1,5 @@
-type AIProvider = 'anthropic' | 'openai' | 'gemini'
+import type { AIProvider } from '~/types/ai'
+import { AI_PROVIDERS } from '~/types/ai'
 
 interface ChatParams {
   model: string
@@ -6,7 +7,7 @@ interface ChatParams {
   messages: { role: 'user' | 'assistant', content: string }[]
 }
 
-const DEFAULT_MODELS: Record<AIProvider, string> = {
+export const DEFAULT_MODELS: Record<AIProvider, string> = {
   anthropic: 'claude-haiku-4-5-20251001',
   openai: 'gpt-4o-mini',
   gemini: 'gemini-3-flash-preview',
@@ -17,15 +18,17 @@ export function createAIClient(
   clientModel: string | undefined,
   clientProvider: string | undefined,
 ): { chat: (params: ChatParams) => Promise<string>, model: string } {
-  const resolvedKey = clientKey?.trim()
-  if (!resolvedKey) {
+  const trimmedKey = clientKey?.trim()
+  if (!trimmedKey) {
     throw createError({
       statusCode: 503,
       statusMessage: '未設定 API Key，請至右上角設定輸入 API Key',
     })
   }
+  // narrow 後重新綁定，讓 closure 內的型別固定為 string
+  const resolvedKey = trimmedKey
 
-  const provider: AIProvider = (['anthropic', 'openai', 'gemini'] as const).includes(clientProvider as AIProvider)
+  const provider: AIProvider = AI_PROVIDERS.includes(clientProvider as AIProvider)
     ? (clientProvider as AIProvider)
     : 'anthropic'
 

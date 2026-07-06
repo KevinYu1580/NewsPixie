@@ -1,14 +1,11 @@
 <script setup lang="ts">
 import type { CuratedArticle } from '@/composables/useDailyBriefing'
 import type { NewsItem } from '@/types/content'
-import { SOURCE_CONFIG } from '@/constants'
 
-const props = defineProps<{
+defineProps<{
   item?: NewsItem
   article?: CuratedArticle
 }>()
-
-const source = computed(() => props.item ? SOURCE_CONFIG[props.item.source] : null)
 
 function getHostname(url: string): string {
   try {

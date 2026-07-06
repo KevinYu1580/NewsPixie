@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useTheme } from 'vuetify'
-import { formatBriefingDate } from '@/utils/utils'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { formatBriefingDate } from '@/utils/utils'
 
 const settingsStore = useSettingsStore()
 const theme = useTheme()
@@ -59,8 +59,12 @@ const briefingDate = formatBriefingDate()
         class="mr-2"
         @update:model-value="setLocale"
       >
-        <v-btn value="zh-TW" size="small">繁中</v-btn>
-        <v-btn value="en" size="small">EN</v-btn>
+        <v-btn value="zh-TW" size="small">
+          繁中
+        </v-btn>
+        <v-btn value="en" size="small">
+          EN
+        </v-btn>
       </v-btn-toggle>
       <LayoutSettingsModal />
       <v-btn

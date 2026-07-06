@@ -1,7 +1,9 @@
+const WWW_PREFIX_RE = /^www\./
+
 /** 從 URL 擷取 domain（e.g. github.com） */
 export function extractDomain(url: string): string {
   try {
-    return new URL(url).hostname.replace(/^www\./, '')
+    return new URL(url).hostname.replace(WWW_PREFIX_RE, '')
   }
   catch {
     return ''
@@ -79,12 +81,58 @@ export function pruneLocalStorageCache(prefix: string, maxDays: number): void {
     if (!key?.startsWith(prefix))
       continue
     const dateStr = key.slice(-10)
-    const date = new Date(dateStr!)
-    if (!isNaN(date.getTime())) {
+    const date = new Date(dateStr)
+    if (!Number.isNaN(date.getTime())) {
       const diffDays = (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
       if (diffDays > maxDays)
         keysToRemove.push(key)
     }
   }
   keysToRemove.forEach(k => localStorage.removeItem(k))
+}
+
+/** 讀取當日 localStorage 快取（key：`{prefix}-{topicId}-{YYYY-MM-DD}`） */
+export function loadTodayCache<T>(prefix: string, topicId: string): T | null {
+  if (typeof window === 'undefined')
+    return null
+  try {
+    const raw = localStorage.getItem(`${prefix}-${topicId}-${todayStr()}`)
+    if (!raw)
+      return null
+    return JSON.parse(raw) as T
+  }
+  catch {
+    return null
+  }
+}
+
+/** 寫入當日 localStorage 快取，並清理超過 maxDays 天的舊條目 */
+export function saveTodayCache(prefix: string, topicId: string, entry: unknown, maxDays: number): void {
+  if (typeof window === 'undefined')
+    return
+  localStorage.setItem(`${prefix}-${topicId}-${todayStr()}`, JSON.stringify(entry))
+  pruneLocalStorageCache(prefix, maxDays)
+}
+
+/** 從 $fetch / ofetch 錯誤物件中解析出可顯示的錯誤訊息 */
+export function getErrorMessage(error: unknown): string | null {
+  if (!error || typeof error !== 'object')
+    return null
+
+  const err = error as {
+    statusMessage?: string
+    message?: string
+    data?: { statusMessage?: string, message?: string, error?: string }
+    response?: { _data?: { statusMessage?: string, message?: string, error?: string } }
+  }
+
+  return err.data?.statusMessage
+    ?? err.response?._data?.statusMessage
+    ?? err.data?.message
+    ?? err.response?._data?.message
+    ?? err.statusMessage
+    ?? err.data?.error
+    ?? err.response?._data?.error
+    ?? err.message
+    ?? null
 }

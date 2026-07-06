@@ -3,6 +3,7 @@ import type { AIProvider } from '@/types/ai'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { PROVIDER_CONFIGS } from '@/types/ai'
 import { encryptPayload } from '@/utils/crypto-payload'
+import { getErrorMessage } from '@/utils/utils'
 
 const { t } = useI18n()
 const settingsStore = useSettingsStore()
@@ -12,9 +13,9 @@ const tab = ref<'ai' | 'briefing'>('ai')
 const localProvider = ref<AIProvider>('anthropic')
 const localKeys = ref<Record<AIProvider, string>>({ anthropic: '', openai: '', gemini: '' })
 const localModels = ref<Record<AIProvider, string>>({
-  anthropic: 'claude-haiku-4-5-20251001',
-  openai: 'gpt-4o-mini',
-  gemini: 'gemini-3-flash-preview',
+  anthropic: PROVIDER_CONFIGS.anthropic.defaultModel,
+  openai: PROVIDER_CONFIGS.openai.defaultModel,
+  gemini: PROVIDER_CONFIGS.gemini.defaultModel,
 })
 const localFetchTime = ref('')
 const localArticleCount = ref(5)
@@ -59,8 +60,7 @@ async function fetchModels(provider: AIProvider, apiKey: string) {
     }
   }
   catch (e: unknown) {
-    const err = e as { data?: { statusMessage?: string }, message?: string }
-    modelsError.value[provider] = err?.data?.statusMessage || err?.message || t('settings.modelListError')
+    modelsError.value[provider] = getErrorMessage(e) || t('settings.modelListError')
   }
   finally {
     modelsLoading.value[provider] = false
@@ -73,9 +73,9 @@ function syncLocalSettings() {
   localKeys.value = { anthropic: '', openai: '', gemini: '' }
   const meta = settingsStore.sessionMeta
   localModels.value = {
-    anthropic: meta?.models.anthropic ?? 'claude-haiku-4-5-20251001',
-    openai: meta?.models.openai ?? 'gpt-4o-mini',
-    gemini: meta?.models.gemini ?? 'gemini-3-flash-preview',
+    anthropic: meta?.models.anthropic ?? PROVIDER_CONFIGS.anthropic.defaultModel,
+    openai: meta?.models.openai ?? PROVIDER_CONFIGS.openai.defaultModel,
+    gemini: meta?.models.gemini ?? PROVIDER_CONFIGS.gemini.defaultModel,
   }
   localFetchTime.value = settingsStore.fetchTime
   localArticleCount.value = settingsStore.articleCount
@@ -144,8 +144,7 @@ async function handleSave() {
     dialog.value = false
   }
   catch (e: unknown) {
-    const err = e as { data?: { statusMessage?: string }, message?: string }
-    saveError.value = err?.data?.statusMessage || err?.message || t('settings.saveError')
+    saveError.value = getErrorMessage(e) || t('settings.saveError')
   }
   finally {
     saving.value = false

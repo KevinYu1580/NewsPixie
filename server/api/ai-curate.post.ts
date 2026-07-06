@@ -14,14 +14,11 @@ interface CuratedArticle {
   url: string
 }
 
+// AI 回覆非純 JSON 時，從文字中撈出數字陣列（如 [1, 3, 7]）
+const INDEX_ARRAY_RE = /\[[\d,\s]+\]/
+
 export default defineEventHandler(async (event) => {
-  let body: CurateRequest
-  try {
-    body = await readBody<CurateRequest>(event)
-  }
-  catch {
-    throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
-  }
+  const body = await readJsonBody<CurateRequest>(event)
 
   const { topicName, keywords, articles, count } = body
 
@@ -58,21 +55,12 @@ ${articleList}
       messages: [{ role: 'user', content: prompt }],
     })
 
-    let indices: number[]
-    try {
-      indices = JSON.parse(text)
-      if (!Array.isArray(indices))
-        indices = []
-    }
-    catch {
-      const match = text.match(/\[[\d,\s]+\]/)
-      indices = match ? JSON.parse(match[0]) : []
-    }
+    const indices = parseAIJsonArray<number>(text, INDEX_ARRAY_RE)
 
     const selected: CuratedArticle[] = indices
       .filter(i => typeof i === 'number' && i >= 1 && i <= articles.length)
       .slice(0, count)
-      .map(i => articles[i - 1])
+      .map(i => articles[i - 1]!)
 
     if (selected.length === 0) {
       return { selected: articles.slice(0, count) }
@@ -81,9 +69,6 @@ ${articleList}
     return { selected }
   }
   catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error)
-      throw error
-    const msg = error instanceof Error ? error.message : 'AI 精選失敗'
-    throw createError({ statusCode: 500, statusMessage: msg })
+    throw toApiError(error, 'AI 精選失敗')
   }
 })

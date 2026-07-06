@@ -1,8 +1,6 @@
 import { calcDescribeMaxTokens } from '~/constants'
 import { resolveAICredentials } from '~/server/utils/session'
 
-const ARRAY_BLOCK_RE = /\[[\s\S]*\]/
-
 interface RepoInput {
   name: string
   description: string
@@ -18,13 +16,7 @@ interface DescribeRequest {
 }
 
 export default defineEventHandler(async (event) => {
-  let body: DescribeRequest
-  try {
-    body = await readBody<DescribeRequest>(event)
-  }
-  catch {
-    throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
-  }
+  const body = await readJsonBody<DescribeRequest>(event)
 
   const { topicName, repos } = body
 
@@ -55,16 +47,7 @@ ${reposText}
       messages: [{ role: 'user', content: prompt }],
     })
 
-    let descriptions: string[]
-    try {
-      descriptions = JSON.parse(text)
-      if (!Array.isArray(descriptions))
-        descriptions = []
-    }
-    catch {
-      const match = text.match(ARRAY_BLOCK_RE)
-      descriptions = match ? JSON.parse(match[0]) : []
-    }
+    const descriptions = parseAIJsonArray<string>(text)
 
     return {
       descriptions: repos.map((r, i) => ({
@@ -74,9 +57,6 @@ ${reposText}
     }
   }
   catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error)
-      throw error
-    const msg = error instanceof Error ? error.message : 'AI 說明生成失敗'
-    throw createError({ statusCode: 500, statusMessage: msg })
+    throw toApiError(error, 'AI 說明生成失敗')
   }
 })

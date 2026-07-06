@@ -8,13 +8,7 @@ interface ExtractRequest {
 }
 
 export default defineEventHandler(async (event) => {
-  let body: ExtractRequest
-  try {
-    body = await readBody<ExtractRequest>(event)
-  }
-  catch {
-    throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
-  }
+  const body = await readJsonBody<ExtractRequest>(event)
 
   const { content } = body
 
@@ -49,16 +43,7 @@ ${trimmedContent}
       messages: [{ role: 'user', content: prompt }],
     })
 
-    let articles: { title: string, url: string }[]
-    try {
-      articles = JSON.parse(text)
-      if (!Array.isArray(articles))
-        articles = []
-    }
-    catch {
-      const match = text.match(/\[[\s\S]*\]/)
-      articles = match ? JSON.parse(match[0]) : []
-    }
+    let articles = parseAIJsonArray<{ title: string, url: string }>(text)
 
     // 去重
     const seen = new Set<string>()
@@ -72,9 +57,6 @@ ${trimmedContent}
     return { articles }
   }
   catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error)
-      throw error
-    const msg = error instanceof Error ? error.message : 'AI 文章提取失敗'
-    throw createError({ statusCode: 500, statusMessage: msg })
+    throw toApiError(error, 'AI 文章提取失敗')
   }
 })

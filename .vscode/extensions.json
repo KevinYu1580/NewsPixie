@@ -1,14 +1,14 @@
 {
   // 推薦團隊安裝的擴充套件
   "recommendations": [
-    "Vue.volar",                    // Vue 3 官方支援
-    "dbaeumer.vscode-eslint",       // ESLint 整合
-    "esbenp.prettier-vscode",       // Prettier
-    "editorconfig.editorconfig",    // EditorConfig 支援
-    "jock.svg",                     // SVG 預覽
-    "yzhang.markdown-all-in-one",   // Markdown 增強
-    "usernamehw.errorlens",         // 錯誤訊息直接顯示在程式碼旁
-    "lokalise.i18n-ally",           // i18n 多語系輔助
-    "kamikillerto.vscode-colorize"  // 顏色值視覺化
+    "Vue.volar", // Vue 3 官方支援
+    "dbaeumer.vscode-eslint", // ESLint 整合
+    "esbenp.prettier-vscode", // Prettier
+    "editorconfig.editorconfig", // EditorConfig 支援
+    "jock.svg", // SVG 預覽
+    "yzhang.markdown-all-in-one", // Markdown 增強
+    "usernamehw.errorlens", // 錯誤訊息直接顯示在程式碼旁
+    "lokalise.i18n-ally", // i18n 多語系輔助
+    "kamikillerto.vscode-colorize" // 顏色值視覺化
   ]
 }

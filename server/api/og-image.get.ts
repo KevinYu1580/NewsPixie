@@ -41,11 +41,13 @@ export default defineEventHandler(async (event) => {
 
     while (received < MAX_HTML_BYTES) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done)
+        break
       html += decoder.decode(value, { stream: true })
       received += value.byteLength
       // 找到 </head> 就停
-      if (html.includes('</head>')) break
+      if (html.includes('</head>'))
+        break
     }
     reader.cancel()
 
@@ -57,18 +59,22 @@ export default defineEventHandler(async (event) => {
   }
 })
 
+// og:image / twitter:image meta tag（各含屬性正序與反序兩種寫法）
+const OG_IMAGE_RE = /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i
+const OG_IMAGE_REVERSED_RE = /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i
+const TWITTER_IMAGE_RE = /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i
+const TWITTER_IMAGE_REVERSED_RE = /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i
+
 function parseOgImage(html: string): string | null {
-  // og:image
-  const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+  const ogMatch = html.match(OG_IMAGE_RE) ?? html.match(OG_IMAGE_REVERSED_RE)
 
-  if (ogMatch?.[1]) return ogMatch[1]
+  if (ogMatch?.[1])
+    return ogMatch[1]
 
-  // twitter:image
-  const twMatch = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
-    ?? html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i)
+  const twMatch = html.match(TWITTER_IMAGE_RE) ?? html.match(TWITTER_IMAGE_REVERSED_RE)
 
-  if (twMatch?.[1]) return twMatch[1]
+  if (twMatch?.[1])
+    return twMatch[1]
 
   return null
 }

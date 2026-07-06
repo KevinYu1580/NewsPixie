@@ -2,6 +2,7 @@ import type { RepoItem } from '@/types/content'
 import type { Topic } from '@/types/topic'
 import { MAX_CACHE_DAYS } from '@/constants'
 import { useSettingsStore } from '@/stores/settingsStore'
+import { getErrorMessage, loadTodayCache, saveTodayCache, todayStr } from '@/utils/utils'
 
 const CACHE_PREFIX = 'newspixie-github'
 
@@ -10,80 +11,6 @@ interface GithubTrendingCache {
   date: string
   repos: RepoItem[]
   cachedAt: string
-}
-
-function getErrorMessage(error: unknown): string | null {
-  if (!error || typeof error !== 'object')
-    return null
-
-  const err = error as {
-    statusMessage?: string
-    message?: string
-    data?: { statusMessage?: string, message?: string, error?: string }
-    response?: { _data?: { statusMessage?: string, message?: string, error?: string } }
-  }
-
-  return err.data?.statusMessage
-    ?? err.response?._data?.statusMessage
-    ?? err.data?.message
-    ?? err.response?._data?.message
-    ?? err.statusMessage
-    ?? err.data?.error
-    ?? err.response?._data?.error
-    ?? err.message
-    ?? null
-}
-
-function todayStr(): string {
-  const date = new Date()
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
-}
-
-function cacheKey(topicId: string): string {
-  return `${CACHE_PREFIX}-${topicId}-${todayStr()}`
-}
-
-function loadCache(topicId: string): GithubTrendingCache | null {
-  if (typeof window === 'undefined')
-    return null
-  try {
-    const raw = localStorage.getItem(cacheKey(topicId))
-    if (!raw)
-      return null
-    return JSON.parse(raw) as GithubTrendingCache
-  }
-  catch {
-    return null
-  }
-}
-
-function saveCache(topicId: string, repos: RepoItem[]): void {
-  if (typeof window === 'undefined')
-    return
-  const entry: GithubTrendingCache = { topicId, date: todayStr(), repos, cachedAt: new Date().toISOString() }
-  localStorage.setItem(cacheKey(topicId), JSON.stringify(entry))
-  pruneOldCache()
-}
-
-function pruneOldCache(): void {
-  const today = new Date()
-  const keysToRemove: string[] = []
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (!key?.startsWith(CACHE_PREFIX))
-      continue
-    const dateStr = key.slice(-10)
-    const date = new Date(dateStr!)
-    if (!Number.isNaN(date.getTime())) {
-      const diffDays = (today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
-      if (diffDays > MAX_CACHE_DAYS)
-        keysToRemove.push(key)
-    }
-  }
-  keysToRemove.forEach(k => localStorage.removeItem(k))
 }
 
 const WHITESPACE_RE = /\s/
@@ -124,7 +51,7 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
   function loadFromCache(): boolean {
     if (!topic.value)
       return false
-    const cached = loadCache(topic.value.id)
+    const cached = loadTodayCache<GithubTrendingCache>(CACHE_PREFIX, topic.value.id)
     if (cached) {
       data.value = cached.repos
       cachedAt.value = cached.cachedAt
@@ -171,7 +98,8 @@ export function useGithubTrending(topic: Ref<Topic | null>) {
 
       data.value = repos
       const now = new Date().toISOString()
-      saveCache(topic.value.id, repos)
+      const entry: GithubTrendingCache = { topicId: topic.value.id, date: todayStr(), repos, cachedAt: now }
+      saveTodayCache(CACHE_PREFIX, topic.value.id, entry, MAX_CACHE_DAYS)
       cachedAt.value = now
     }
     catch (err) {

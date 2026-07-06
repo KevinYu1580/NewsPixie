@@ -1,7 +1,10 @@
 import type { H3Event } from 'h3'
+import type { AIProvider } from '~/types/ai'
+import process from 'node:process'
+import { AI_PROVIDERS } from '~/types/ai'
 import { decryptSessionPayload, encryptSessionPayload } from './session-crypto'
 
-export type AIProvider = 'anthropic' | 'openai' | 'gemini'
+export type { AIProvider }
 
 export interface SessionPayload {
   v: 1
@@ -38,7 +41,7 @@ function maskKey(key: string): string {
 export function buildMeta(payload: SessionPayload): SessionMeta {
   const providers: AIProvider[] = []
   const masked: Partial<Record<AIProvider, string>> = {}
-  ;(['anthropic', 'openai', 'gemini'] as const).forEach((p) => {
+  AI_PROVIDERS.forEach((p) => {
     if (payload.keys[p]?.trim()) {
       providers.push(p)
       masked[p] = maskKey(payload.keys[p])
@@ -103,7 +106,7 @@ export function resolveAICredentials(
     throw createError({ statusCode: 401, statusMessage: '尚未設定 API Key，請至右上角設定輸入' })
   }
   const candidate = body.provider as AIProvider | undefined
-  const provider: AIProvider = candidate && (['anthropic', 'openai', 'gemini'] as const).includes(candidate)
+  const provider: AIProvider = candidate && AI_PROVIDERS.includes(candidate)
     ? candidate
     : session.provider
   const apiKey = session.keys[provider]?.trim()

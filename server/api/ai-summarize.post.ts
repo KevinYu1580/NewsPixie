@@ -21,13 +21,7 @@ export interface SummarizedArticle {
 }
 
 export default defineEventHandler(async (event) => {
-  let body: SummarizeRequest
-  try {
-    body = await readBody<SummarizeRequest>(event)
-  }
-  catch {
-    throw createError({ statusCode: 400, statusMessage: '無效的請求格式' })
-  }
+  const body = await readJsonBody<SummarizeRequest>(event)
 
   const { topicName, articles } = body
 
@@ -58,16 +52,7 @@ ${articlesText}
       messages: [{ role: 'user', content: prompt }],
     })
 
-    let summaries: string[]
-    try {
-      summaries = JSON.parse(text)
-      if (!Array.isArray(summaries))
-        summaries = []
-    }
-    catch {
-      const match = text.match(/\[[\s\S]*\]/)
-      summaries = match ? JSON.parse(match[0]) : []
-    }
+    const summaries = parseAIJsonArray<string>(text)
 
     const result: SummarizedArticle[] = articles.map((a, i) => ({
       title: a.title,
@@ -78,9 +63,6 @@ ${articlesText}
     return { articles: result, generatedAt: new Date().toISOString() }
   }
   catch (error) {
-    if (error && typeof error === 'object' && 'statusCode' in error)
-      throw error
-    const msg = error instanceof Error ? error.message : 'AI 摘要生成失敗'
-    throw createError({ statusCode: 500, statusMessage: msg })
+    throw toApiError(error, 'AI 摘要生成失敗')
   }
 })

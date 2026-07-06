@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Topic } from '@/types/topic'
 
-const props = defineProps<{
+defineProps<{
   topics: Topic[]
   activeTopicId: string | null
 }>()

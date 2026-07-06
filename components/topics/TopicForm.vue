@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-const COLOR_OPTIONS: TopicColor[] = ['violet', 'indigo', 'blue', 'cyan', 'emerald', 'orange', 'rose', 'red']
+const COLOR_OPTIONS = Object.keys(TOPIC_COLORS) as TopicColor[]
 const SLUG_WHITESPACE_RE = /\s+/g
 
 const tab = ref<'briefing' | 'github'>('briefing')

@@ -6,7 +6,7 @@ const props = defineProps<{
   repo: RepoItem
 }>()
 
-const [owner, name] = computed(() => props.repo.name.split('/')).value
+const [owner, name] = props.repo.name.split('/')
 </script>
 
 <template>
