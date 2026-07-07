@@ -11,6 +11,8 @@ const props = defineProps<{
   hasJinaUrls: boolean
   articleCount: number
   run: () => void
+  topicId: string
+  topicName: string
 }>()
 
 const settingsStore = useSettingsStore()
@@ -54,6 +56,8 @@ const { t } = useI18n()
         v-for="article in props.articles"
         :key="article.url"
         :article="article"
+        :topic-id="props.topicId"
+        :topic-name="props.topicName"
       />
     </div>
 
