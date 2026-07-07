@@ -1,12 +1,26 @@
 <script setup lang="ts">
 import type { RepoItem } from '@/types/content'
+import { useBookmarksStore } from '@/stores/bookmarksStore'
 import { formatNumber } from '@/utils/utils'
 
 const props = defineProps<{
   repo: RepoItem
+  topicId?: string
+  topicName?: string
 }>()
 
 const [owner, name] = props.repo.name.split('/')
+
+const bookmarksStore = useBookmarksStore()
+const { t } = useI18n()
+
+const isBookmarked = computed(() => bookmarksStore.isRepoBookmarked(props.repo.id))
+
+function toggleBookmark() {
+  if (!props.topicId || !props.topicName)
+    return
+  bookmarksStore.toggleRepo(props.repo, props.topicId, props.topicName)
+}
 </script>
 
 <template>
@@ -29,11 +43,26 @@ const [owner, name] = props.repo.name.split('/')
             {{ name }}
           </p>
         </div>
-        <v-icon
-          icon="mdi-open-in-new"
-          size="14"
-          class="np-external-icon text-medium-emphasis flex-shrink-0"
-        />
+        <div class="d-flex align-center ga-1 flex-shrink-0">
+          <v-btn
+            icon
+            size="x-small"
+            variant="text"
+            :aria-label="isBookmarked ? t('bookmarks.removeAria') : t('bookmarks.addAria')"
+            @click.stop.prevent="toggleBookmark"
+          >
+            <v-icon
+              :icon="isBookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+              size="16"
+              :color="isBookmarked ? 'np-accent' : undefined"
+            />
+          </v-btn>
+          <v-icon
+            icon="mdi-open-in-new"
+            size="14"
+            class="np-external-icon text-medium-emphasis"
+          />
+        </div>
       </div>
 
       <!-- 說明 -->

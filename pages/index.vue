@@ -1,13 +1,17 @@
 <script setup lang="ts">
+import { useBookmarksStore } from '@/stores/bookmarksStore'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { useTopicsStore } from '@/stores/topicsStore'
 import { TOPIC_COLORS } from '@/types/topic'
 
 const topicsStore = useTopicsStore()
 const settingsStore = useSettingsStore()
+const bookmarksStore = useBookmarksStore()
 
 const { t } = useI18n()
 useHead({ title: () => t('index.pageTitle') })
+
+const viewMode = ref<'topic' | 'bookmarks'>('topic')
 
 const topics = computed(() => topicsStore.topics)
 const activeTopic = computed(() => topicsStore.activeTopic)
@@ -34,7 +38,10 @@ const mobileDrawer = computed({
     <LayoutAppSidebar
       :topics="topics"
       :active-topic-id="activeTopicId"
-      @select-topic="(id) => { topicsStore.setActiveTopic(id); mobileDrawer = false; }"
+      :is-bookmarks-view="viewMode === 'bookmarks'"
+      :bookmarks-count="bookmarksStore.totalCount"
+      @select-topic="(id) => { topicsStore.setActiveTopic(id); viewMode = 'topic'; mobileDrawer = false; }"
+      @select-bookmarks="() => { viewMode = 'bookmarks'; mobileDrawer = false; }"
       @add-topic="topicsStore.addTopic"
       @update-topic="topicsStore.updateTopic"
       @delete-topic="topicsStore.deleteTopic"
@@ -53,7 +60,15 @@ const mobileDrawer = computed({
         style="max-width: 896px;"
       >
         <div
-          v-if="activeTopic"
+          v-if="viewMode === 'bookmarks'"
+          class="mb-6"
+        >
+          <h1 class="font-mono-label text-xs text-uppercase tracking-widest">
+            {{ t('sidebar.myBookmarks') }}
+          </h1>
+        </div>
+        <div
+          v-else-if="activeTopic"
           class="mb-6"
         >
           <h1
@@ -64,8 +79,10 @@ const mobileDrawer = computed({
           </h1>
         </div>
 
+        <ContentBookmarksView v-if="viewMode === 'bookmarks'" />
+
         <ContentBriefingFeed
-          v-if="activeTopic"
+          v-else-if="activeTopic"
           :key="activeTopic.id"
           :topic="activeTopic"
         />

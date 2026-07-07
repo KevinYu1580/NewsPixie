@@ -4,10 +4,13 @@ import type { Topic } from '@/types/topic'
 defineProps<{
   topics: Topic[]
   activeTopicId: string | null
+  isBookmarksView: boolean
+  bookmarksCount: number
 }>()
 
 const emit = defineEmits<{
   selectTopic: [id: string]
+  selectBookmarks: []
   addTopic: [topic: Omit<Topic, 'id' | 'createdAt'>]
   updateTopic: [id: string, updates: Partial<Omit<Topic, 'id' | 'createdAt'>>]
   deleteTopic: [id: string]
@@ -30,6 +33,30 @@ function openAdd() {
 </script>
 
 <template>
+  <!-- 我的收藏 -->
+  <v-list density="compact" nav class="py-2">
+    <v-list-item
+      :active="isBookmarksView"
+      :aria-current="isBookmarksView ? 'page' : undefined"
+      class="np-topic-item rounded"
+      @click="emit('selectBookmarks')"
+    >
+      <template #prepend>
+        <v-icon icon="mdi-bookmark" size="18" class="mr-2" />
+      </template>
+      <v-list-item-title class="text-body-2">
+        {{ t('sidebar.myBookmarks') }}
+      </v-list-item-title>
+      <template #append>
+        <v-chip v-if="bookmarksCount > 0" size="x-small" variant="tonal" class="font-mono">
+          {{ bookmarksCount }}
+        </v-chip>
+      </template>
+    </v-list-item>
+  </v-list>
+
+  <v-divider />
+
   <!-- 標題列 -->
   <div class="d-flex align-center justify-space-between px-4" style="height: 40px;">
     <span class="font-mono-label text-xs font-weight-bold text-uppercase tracking-widest text-medium-emphasis">
@@ -52,7 +79,7 @@ function openAdd() {
       v-for="topic in topics"
       :key="topic.id"
       :topic="topic"
-      :is-active="topic.id === activeTopicId"
+      :is-active="!isBookmarksView && topic.id === activeTopicId"
       @click="emit('selectTopic', topic.id)"
     />
   </v-list>

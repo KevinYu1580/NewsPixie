@@ -122,6 +122,8 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
         :has-jina-urls="hasJinaUrls"
         :article-count="settingsStore.articleCount"
         :run="run"
+        :topic-id="topic.id"
+        :topic-name="topic.name"
       />
     </ContentSection>
 
@@ -150,6 +152,8 @@ const { data: repos, isLoading: repoLoading, isError: repoError, error: repoErro
         :is-error="repoError"
         :error="repoErrorMessage"
         :repo-count="settingsStore.repoCount"
+        :topic-id="topic.id"
+        :topic-name="topic.name"
       />
     </ContentSection>
   </div>

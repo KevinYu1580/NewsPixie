@@ -7,6 +7,8 @@ const props = defineProps<{
   isError: boolean
   error: string | null
   repoCount: number
+  topicId: string
+  topicName: string
 }>()
 
 const { t } = useI18n()
@@ -42,7 +44,13 @@ const { t } = useI18n()
 
     <!-- 卡片清單 -->
     <div v-else class="np-card-grid">
-      <ContentGithubRepoCard v-for="repo in props.repos" :key="repo.id" :repo="repo" />
+      <ContentGithubRepoCard
+        v-for="repo in props.repos"
+        :key="repo.id"
+        :repo="repo"
+        :topic-id="props.topicId"
+        :topic-name="props.topicName"
+      />
     </div>
   </div>
 </template>

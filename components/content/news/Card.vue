@@ -1,11 +1,27 @@
 <script setup lang="ts">
 import type { CuratedArticle } from '@/composables/useDailyBriefing'
 import type { NewsItem } from '@/types/content'
+import { useBookmarksStore } from '@/stores/bookmarksStore'
 
-defineProps<{
+const props = defineProps<{
   item?: NewsItem
   article?: CuratedArticle
+  topicId?: string
+  topicName?: string
 }>()
+
+const bookmarksStore = useBookmarksStore()
+const { t } = useI18n()
+
+const isBookmarked = computed(() =>
+  props.article ? bookmarksStore.isArticleBookmarked(props.article.url) : false,
+)
+
+function toggleBookmark() {
+  if (!props.article || !props.topicId || !props.topicName)
+    return
+  bookmarksStore.toggleArticle(props.article, props.topicId, props.topicName)
+}
 
 function getHostname(url: string): string {
   try {
@@ -41,14 +57,28 @@ function getHostname(url: string): string {
             cover
           />
           <v-card-text class="pa-4">
-            <div class="d-flex">
-              <p class="text-body-2 font-weight-medium" style="line-height: 1.5;">
+            <div class="d-flex align-start ga-1">
+              <p class="text-body-2 font-weight-medium flex-grow-1" style="line-height: 1.5;">
                 {{ article.title }}
               </p>
+              <v-btn
+                icon
+                size="x-small"
+                variant="text"
+                class="flex-shrink-0"
+                :aria-label="isBookmarked ? t('bookmarks.removeAria') : t('bookmarks.addAria')"
+                @click.stop.prevent="toggleBookmark"
+              >
+                <v-icon
+                  :icon="isBookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+                  size="16"
+                  :color="isBookmarked ? 'np-accent' : undefined"
+                />
+              </v-btn>
               <v-icon
                 icon="mdi-open-in-new"
                 size="14"
-                class="np-external-icon text-medium-emphasis flex-shrink-0 ml-auto"
+                class="np-external-icon text-medium-emphasis flex-shrink-0"
               />
             </div>
 
