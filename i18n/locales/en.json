@@ -99,7 +99,8 @@
   "sidebar": {
     "topicsLabel": "Topics",
     "manageTopics": "Manage topics",
-    "addTopic": "Add topic"
+    "addTopic": "Add topic",
+    "myBookmarks": "My Bookmarks"
   },
   "stage": {
     "fetchingList": "Fetching page content…",
@@ -111,5 +112,14 @@
     "noContent": "Unable to fetch content from any source. Please check your URLs.",
     "noArticles": "AI could not identify any articles from the page content",
     "briefingFailed": "Daily briefing generation failed"
+  },
+  "bookmarks": {
+    "filterAll": "All",
+    "filterArticles": "Articles",
+    "filterRepos": "Repos",
+    "empty": "No bookmarks yet. Click the bookmark icon while browsing to save items.",
+    "fromTopic": "From: {name}",
+    "addAria": "Add to bookmarks",
+    "removeAria": "Remove from bookmarks"
   }
 }

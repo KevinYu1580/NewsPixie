@@ -99,7 +99,8 @@
   "sidebar": {
     "topicsLabel": "主題",
     "manageTopics": "管理主題",
-    "addTopic": "新增主題"
+    "addTopic": "新增主題",
+    "myBookmarks": "我的收藏"
   },
   "stage": {
     "fetchingList": "正在抓取頁面內容…",
@@ -111,5 +112,14 @@
     "noContent": "所有來源均無法取得頁面內容，請確認 URL 是否正確",
     "noArticles": "AI 未能從頁面內容中辨識出任何文章",
     "briefingFailed": "每日精選生成失敗"
+  },
+  "bookmarks": {
+    "filterAll": "全部",
+    "filterArticles": "文章",
+    "filterRepos": "Repo",
+    "empty": "尚未收藏任何內容，瀏覽時點擊書籤圖示即可加入收藏",
+    "fromTopic": "來自：{name}",
+    "addAria": "加入收藏",
+    "removeAria": "移除收藏"
   }
 }
