@@ -80,6 +80,7 @@ export default defineNuxtConfig({
     rsaPublicKey: '',
     public: {
       encryptSecret: '',
+      mockMode: '',
     },
   },
 

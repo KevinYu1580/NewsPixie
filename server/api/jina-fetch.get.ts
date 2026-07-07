@@ -29,6 +29,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '缺少 url 參數' })
   }
 
+  if (isMockMode()) {
+    return { content: MOCK_JINA_CONTENT }
+  }
+
   let jinaRes: Response
   try {
     jinaRes = await fetch(`${JINA_BASE}${url}`, { headers: JINA_HEADERS })

@@ -1,6 +1,6 @@
 # NewsPixie — 架構說明文件 (arc24)
 
-> 版本：0.4.0 | 日期：2026-07-07
+> 版本：0.5.0 | 日期：2026-07-07
 
 ---
 
@@ -46,6 +46,7 @@
 12. [持久化機制](#12-持久化機制)
 13. [多語系（i18n）](#13-多語系i18n)
 14. [E2E 測試](#14-e2e-測試)
+16. [Mock 模式（測試資料機制）](#16-mock-模式測試資料機制)
 
 ---
 
@@ -139,6 +140,7 @@ NewsPixie/
 │       ├── api-helpers.ts   # 端點共用 helpers：readJsonBody、parseAIJsonArray、toApiError
 │       ├── asymmetric.ts    # RSA+AES hybrid 解密（見 §15）
 │       ├── github.ts        # GitHub Search API 呼叫（server auto-import）
+│       ├── mock.ts          # mock 模式判斷 isMockMode() + 靜態 fixture（見 §16）
 │       ├── rss.ts           # RSS 解析邏輯（server auto-import）
 │       ├── session-crypto.ts# session cookie AES-256-GCM 加解密
 │       └── session.ts       # session 讀寫、resolveAICredentials
@@ -149,6 +151,8 @@ NewsPixie/
 ├── types/
 │   ├── topic.ts             # Topic、TopicColor、TOPIC_COLORS（見 §4.1）
 │   └── content.ts           # NewsItem、RepoItem（見 §4.2）
+├── public/
+│   └── mock-og/             # mock 模式 og-image 佔位圖（4 張 SVG，見 §16）
 ├── assets/
 │   └── globals.css          # 全域樣式、自訂 token
 ├── plugins/
@@ -282,7 +286,7 @@ API Key 不再存於 client；改由 server 加密 cookie 持有（見 [§15](#1
 
 | Computed | 說明 |
 |----------|------|
-| `hasApiKey` | `!!sessionMeta?.hasKey`，UI gate 全部依此 |
+| `hasApiKey` | `mockMode \|\| !!sessionMeta?.hasKey`，UI gate 全部依此（mock 模式見 [§16](#16-mock-模式測試資料機制)） |
 | `currentModel` | `sessionMeta.models[provider]`，給 AI 端點請求帶入 |
 | `maskedCurrentKey` | `sessionMeta.masked[provider]`，UI 顯示 `••••XXXX` 用 |
 
@@ -760,6 +764,7 @@ TopicsTopicManagerModal
 | `NUXT_SESSION_SECRET` | server-only | ✅ | session cookie AES-256-GCM 加密 secret，scrypt derive 為 32-byte key。建議 64 hex 字元（`openssl rand -hex 32`）。 |
 | `NUXT_RSA_PRIVATE_KEY` | server-only | ✅ | RSA-2048 私鑰（PEM PKCS#8），用於解密 client 上送的 hybrid payload。 |
 | `NUXT_RSA_PUBLIC_KEY` | server-only | ✅ | RSA-2048 公鑰（PEM SPKI），透過 `GET /api/session/pubkey` 回傳給 client。 |
+| `NUXT_PUBLIC_MOCK_MODE` | client+server（public） | 否 | 設 `1` 啟用 mock 模式（嚴格比對；`0`、留空、不設均為關閉）。啟用後不需設定上述三個 server-only 變數。詳見 [§16](#16-mock-模式測試資料機制)。 |
 
 產生 RSA keypair：
 
@@ -881,3 +886,47 @@ DevTools Network panel 中所見：
 
 - `NUXT_SESSION_SECRET` 變更：所有現有 cookie 失效，使用者需重新輸入 key（`np_session` 解密失敗 → 視為無 session → 401 → UI 提示重設）
 - `NUXT_RSA_PRIVATE_KEY` / `NUXT_RSA_PUBLIC_KEY` 變更：client cache 的舊 pubkey 會在下次儲存時導致 server 解密失敗回 400；建議搭配重啟即可，client `sessionStorage` 因為使用記憶體 cache（非 sessionStorage）所以重整即重抓
+
+---
+
+## 16. Mock 模式（測試資料機制）
+
+> 設計文件：`docs/superpowers/specs/2026-07-07-mock-mode-design.md`
+
+**目標**：讓測試／Demo 環境在無任何 AI provider API key、無外部網路的情況下，打開即可看到完整內容（靜態測試資料），且 UI 行為（loading 階段、快取、重新整理、主題切換）與真實模式完全一致。主要使用情境為手動測試／Demo（非 E2E 自動化、非單元測試）。
+
+### 啟用方式
+
+設定環境變數 `NUXT_PUBLIC_MOCK_MODE=1`，client 與 server 共用同一個 flag（`runtimeConfig.public.mockMode`）。判斷邏輯位於 [server/utils/mock.ts](server/utils/mock.ts) 的 `isMockMode()`：先 `String()` 轉型再嚴格比對 `'1'`（Nitro 以 destr 解析 env 覆寫值，`1` 會變成 number），設 `0`、留空、不設均為關閉。
+
+啟用後 `NUXT_SESSION_SECRET`、`NUXT_RSA_PRIVATE_KEY`、`NUXT_RSA_PUBLIC_KEY` 均不需設定。正式環境不設此變數即可（無任何手動切換動作）；若需 Demo 預覽站，可只在部署平台的 Preview environment scope 設定。
+
+### 實作方式
+
+各端點**內建 mock 分支**（不用 middleware 攔截），分支位置在既有參數驗證（400）之後、`resolveAICredentials()` 之前——因此 mock 模式不需 session、不會 401。fixture 集中於 [server/utils/mock.ts](server/utils/mock.ts)，不加人工延遲。
+
+| 端點 | Mock 回應 | 型態 |
+|------|----------|------|
+| `GET /api/jina-fetch` | 固定的簡短 markdown 字串（`MOCK_JINA_CONTENT`） | 靜態（內容不被實際使用，僅讓 pipeline 流動） |
+| `POST /api/ai-extract-articles` | 固定 16 篇文章清單（`MOCK_ARTICLES`，繁中科技／AI／財經標題） | 靜態 |
+| `POST /api/ai-curate` | 回傳輸入文章的前 `count` 篇 | 回聲式——與上游天然一致，尊重 `articleCount` 設定 |
+| `GET /api/og-image` | 依 URL hash 輪替回傳 `/mock-og/{1-4}.svg`（`mockOgImagePath()`） | 確定性佔位圖（[public/mock-og/](public/mock-og/)） |
+| `GET /api/github-trending` | `MOCK_REPOS`（固定 10 筆）依 `limit` 截取 | 靜態，尊重 `repoCount` 設定 |
+| `POST /api/ai-repo-describe` | 原樣回傳輸入 repos 的 name + description | 回聲式 |
+
+`ai-summarize`、`ai-briefing` 不加 mock（目前無任何前端程式呼叫，YAGNI）。
+
+### Client 端
+
+Client 僅 [settingsStore](stores/settingsStore.ts) 一行感知 mock 模式：`hasApiKey = mockMode || !!sessionMeta?.hasKey`。其餘完全照常——`useDailyBriefing` 四階段 pipeline 照走、結果照常寫入 localStorage 每日快取、重新整理按鈕與主題切換行為與真實模式一致。
+
+### 已知限制（已確認可接受）
+
+1. 所有主題顯示同一組文章／repos——fixture 為全域靜態，不隨主題關鍵字變化。
+2. Mock 模式下若在設定頁按「儲存 API Key」，會因缺 RSA 金鑰報錯（Demo 情境不會操作此路徑）。
+3. Mock 立即回傳，loading 階段一閃而過。
+
+### 安全性
+
+- Mock 模式為 opt-in：正式環境不設 flag，所有 mock 路徑為死碼，零影響。
+- Mock 分支不讀取、不回傳任何 session 或 key 資料。

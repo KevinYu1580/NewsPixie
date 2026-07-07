@@ -16,6 +16,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '缺少 url 參數' })
   }
 
+  if (isMockMode()) {
+    return { imageUrl: mockOgImagePath(url) }
+  }
+
   try {
     const res = await fetch(url, {
       headers: {

@@ -24,6 +24,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '缺少 repos' })
   }
 
+  if (isMockMode()) {
+    return { descriptions: repos.map(r => ({ name: r.name, description: r.description })) }
+  }
+
   const { apiKey, provider, model } = resolveAICredentials(event, body)
   const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
   const maxTokens = calcDescribeMaxTokens(repos.length)

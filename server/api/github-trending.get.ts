@@ -5,6 +5,10 @@ export default defineEventHandler(async (event) => {
   const q = String(query.query || 'developer-tools')
   const limit = Number(query.limit ?? 8)
 
+  if (isMockMode()) {
+    return MOCK_REPOS.slice(0, limit)
+  }
+
   try {
     return await fetchGithubTrending(q, limit)
   }

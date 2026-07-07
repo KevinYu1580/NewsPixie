@@ -46,7 +46,10 @@ export const useSettingsStore = defineStore('settings', () => {
   /** 偵測到舊版 localStorage 內仍存有明文 key、需提示使用者重新輸入 */
   const legacyKeyDetected = ref(false)
 
-  const hasApiKey = computed(() => !!sessionMeta.value?.hasKey)
+  /** mock 模式（NUXT_PUBLIC_MOCK_MODE=1）下 UI 閘門一律視為已有 key */
+  const mockMode = String(useRuntimeConfig().public.mockMode) === '1'
+
+  const hasApiKey = computed(() => mockMode || !!sessionMeta.value?.hasKey)
   const currentModel = computed<string>(() => sessionMeta.value?.models[provider.value] ?? '')
   const maskedCurrentKey = computed<string>(() => sessionMeta.value?.masked?.[provider.value] ?? '')
 

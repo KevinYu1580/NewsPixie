@@ -16,6 +16,10 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '缺少 content' })
   }
 
+  if (isMockMode()) {
+    return { articles: MOCK_ARTICLES }
+  }
+
   const { apiKey, provider, model } = resolveAICredentials(event, body)
   const { chat, model: resolvedModel } = createAIClient(apiKey, model, provider)
 
