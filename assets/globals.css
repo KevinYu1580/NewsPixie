@@ -34,15 +34,6 @@
   text-decoration: none;
 }
 
-.np-news-card .np-external-icon {
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.np-news-card:hover .np-external-icon {
-  opacity: 1;
-}
-
 
 
 /* ── AI Briefing 卡片 ────────────────────────── */

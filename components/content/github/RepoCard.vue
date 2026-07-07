@@ -43,26 +43,20 @@ function toggleBookmark() {
             {{ name }}
           </p>
         </div>
-        <div class="d-flex align-center ga-1 flex-shrink-0">
-          <v-btn
-            icon
-            size="x-small"
-            variant="text"
-            :aria-label="isBookmarked ? t('bookmarks.removeAria') : t('bookmarks.addAria')"
-            @click.stop.prevent="toggleBookmark"
-          >
-            <v-icon
-              :icon="isBookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
-              size="16"
-              :color="isBookmarked ? 'np-accent' : undefined"
-            />
-          </v-btn>
+        <v-btn
+          icon
+          size="x-small"
+          variant="text"
+          class="flex-shrink-0"
+          :aria-label="isBookmarked ? t('bookmarks.removeAria') : t('bookmarks.addAria')"
+          @click.stop.prevent="toggleBookmark"
+        >
           <v-icon
-            icon="mdi-open-in-new"
-            size="14"
-            class="np-external-icon text-medium-emphasis"
+            :icon="isBookmarked ? 'mdi-bookmark' : 'mdi-bookmark-outline'"
+            size="16"
+            :color="isBookmarked ? 'np-accent' : undefined"
           />
-        </div>
+        </v-btn>
       </div>
 
       <!-- 說明 -->

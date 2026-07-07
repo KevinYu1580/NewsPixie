@@ -75,11 +75,6 @@ function getHostname(url: string): string {
                   :color="isBookmarked ? 'np-accent' : undefined"
                 />
               </v-btn>
-              <v-icon
-                icon="mdi-open-in-new"
-                size="14"
-                class="np-external-icon text-medium-emphasis flex-shrink-0"
-              />
             </div>
 
             <div class="d-flex align-center ga-1 mt-2">
