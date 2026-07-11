@@ -21,7 +21,6 @@
 - [功能特色](#功能特色)
 - [如何使用](#如何使用)
 - [畫面預覽](#畫面預覽)
-- [本地開發](#本地開發)
 - [架構簡介](#架構簡介)
 - [技術棧](#技術棧)
 
@@ -97,40 +96,6 @@
 
 ---
 
-## 本地開發
-
-```bash
-# 安裝依賴(使用 pnpm)
-pnpm install
-
-# 最快上手:mock 模式(使用內建假資料,不需任何金鑰與網路)
-NUXT_PUBLIC_MOCK_MODE=1 pnpm dev
-
-# 一般開發模式(需設定下方環境變數)
-pnpm dev
-```
-
-### 環境變數
-
-| 變數 | 必填 | 說明 |
-| --- | :---: | --- |
-| `NUXT_SESSION_SECRET` | ✅ | Session cookie 的 AES-256-GCM 加密密鑰(建議 `openssl rand -hex 32`) |
-| `NUXT_RSA_PRIVATE_KEY` | ✅ | RSA-2048 私鑰(PEM PKCS#8),解密前端上送的加密 payload |
-| `NUXT_RSA_PUBLIC_KEY` | ✅ | RSA-2048 公鑰(PEM SPKI),提供給前端加密用 |
-| `NUXT_PUBLIC_MOCK_MODE` | — | 設 `1` 啟用 mock 模式(demo / 開發用,啟用後上述變數皆可免設) |
-| `NUXT_PUBLIC_ENCRYPT_SECRET` | — | 僅供舊版 localStorage 資料一次性遷移,新部署可不設 |
-
-### 其他指令
-
-```bash
-pnpm build      # 產線建置
-pnpm generate   # 靜態產出
-pnpm preview    # 預覽建置結果
-pnpm lint       # ESLint 檢查
-```
-
----
-
 ## 架構簡介
 
 - **SPA 架構**(`ssr: false`)+ **Nitro Server API** 作為後端 proxy:所有 AI 呼叫、網頁抓取、GitHub 搜尋都經由 server 端點執行,前端不直接接觸外部 API 與金鑰
@@ -159,4 +124,4 @@ pnpm lint       # ESLint 檢查
 
 ## 作者
 
-由 [Kevin Yu](https://github.com/KevinYu1580) 開發。歡迎開 Issue 或 PR!
+由 [Kevin Yu](https://github.com/KevinYu1580) 開發。
