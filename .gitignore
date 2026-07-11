@@ -45,3 +45,24 @@ yarn-error.log*
 # playwright
 test-results/
 playwright-report/
+
+# nuxt.js extras
+.data/
+.cache/
+dist/
+
+# logs
+logs/
+*.log
+
+# editor / IDE
+.vscode/
+.idea/
+
+# AI assistant local files
+.claude/
+CLAUDE.md
+AGENTS.md
+
+# OS
+Thumbs.db
