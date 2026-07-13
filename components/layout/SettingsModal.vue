@@ -26,6 +26,8 @@ const saveError = ref<string | null>(null)
 const clearing = ref(false)
 /** 已有儲存的 key 時預設隱藏輸入框，按「更換 Key」才顯示 */
 const replacingKey = ref(false)
+/** 清除 key 前的確認跳窗 */
+const confirmClearOpen = ref(false)
 
 const dynamicModels = ref<Record<AIProvider, { id: string, label: string }[]>>({
   anthropic: [],
@@ -161,6 +163,7 @@ async function handleClearSession() {
   }
   finally {
     clearing.value = false
+    confirmClearOpen.value = false
   }
 }
 
@@ -269,12 +272,11 @@ const savedModelLabel = computed(() => {
                     {{ t('settings.replaceKey') }}
                   </v-btn>
                   <v-btn
-                    :loading="clearing"
                     size="small"
                     variant="text"
                     color="error"
                     prepend-icon="mdi-delete-outline"
-                    @click="handleClearSession"
+                    @click="confirmClearOpen = true"
                   >
                     {{ t('settings.clearSession') }}
                   </v-btn>
@@ -501,5 +503,34 @@ const savedModelLabel = computed(() => {
         </v-btn>
       </v-card-actions>
     </v-card>
+
+    <!-- 清除 key 確認跳窗 -->
+    <v-dialog v-model="confirmClearOpen" max-width="360">
+      <v-card>
+        <v-card-title class="text-subtitle-1 font-weight-medium pt-4 px-5">
+          {{ t('settings.clearConfirmTitle') }}
+        </v-card-title>
+        <v-card-text class="px-5 text-body-2 text-medium-emphasis">
+          {{ t('settings.clearConfirmText') }}
+        </v-card-text>
+        <v-card-actions class="justify-end px-5 pb-4">
+          <v-btn
+            variant="text"
+            :disabled="clearing"
+            @click="confirmClearOpen = false"
+          >
+            {{ t('settings.cancel') }}
+          </v-btn>
+          <v-btn
+            variant="flat"
+            color="error"
+            :loading="clearing"
+            @click="handleClearSession"
+          >
+            {{ t('settings.confirmClear') }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-dialog>
 </template>
