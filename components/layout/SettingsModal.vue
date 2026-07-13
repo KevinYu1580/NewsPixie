@@ -24,6 +24,8 @@ const showKey = ref(false)
 const saving = ref(false)
 const saveError = ref<string | null>(null)
 const clearing = ref(false)
+/** 已有儲存的 key 時預設隱藏輸入框，按「更換 Key」才顯示 */
+const replacingKey = ref(false)
 
 const dynamicModels = ref<Record<AIProvider, { id: string, label: string }[]>>({
   anthropic: [],
@@ -41,13 +43,16 @@ const modelsError = ref<Record<AIProvider, string | null>>({
   gemini: null,
 })
 
-async function fetchModels(provider: AIProvider, apiKey: string) {
-  if (!apiKey.trim())
+/** 未傳 apiKey 時由 server 使用 session 中已儲存的 key 查詢模型清單 */
+async function fetchModels(provider: AIProvider, apiKey?: string) {
+  const trimmed = apiKey?.trim()
+  const hasStoredKey = !!settingsStore.sessionMeta?.masked?.[provider]
+  if (!trimmed && !hasStoredKey)
     return
   modelsLoading.value[provider] = true
   modelsError.value[provider] = null
   try {
-    const encrypted = await encryptPayload({ apiKey: apiKey.trim() })
+    const encrypted = trimmed ? await encryptPayload({ apiKey: trimmed }) : undefined
     const res = await $fetch<{ models: { id: string, label: string }[] }>('/api/ai-models', {
       method: 'POST',
       body: { provider, encrypted },
@@ -82,20 +87,26 @@ function syncLocalSettings() {
   localRepoCount.value = settingsStore.repoCount
   showKey.value = false
   saveError.value = null
-  // 已儲存的 provider 仍可呼叫 ai-models 預載清單嗎？需 apiKey 明文，不行。
-  // 故僅清空 dynamicModels，等使用者輸入新 key 再 fetch。
+  replacingKey.value = false
   dynamicModels.value = { anthropic: [], openai: [], gemini: [] }
 }
 
 watch(localProvider, (p) => {
-  if (localKeys.value[p].trim() && !dynamicModels.value[p].length && !modelsLoading.value[p]) {
-    fetchModels(p, localKeys.value[p])
+  replacingKey.value = false
+  const typed = localKeys.value[p].trim()
+  const stored = !!settingsStore.sessionMeta?.masked?.[p]
+  if ((typed || stored) && !dynamicModels.value[p].length && !modelsLoading.value[p]) {
+    fetchModels(p, typed || undefined)
   }
 })
 
 function openDialog() {
   syncLocalSettings()
   dialog.value = true
+  // 已有儲存的 key：由 session 預載模型清單，不需重新輸入 key
+  if (settingsStore.sessionMeta?.masked?.[localProvider.value]) {
+    fetchModels(localProvider.value)
+  }
 }
 
 async function handleSave() {
@@ -103,11 +114,7 @@ async function handleSave() {
   saveError.value = null
   try {
     const meta = settingsStore.sessionMeta
-    // 若使用者本次未輸入該 provider 的 key、保留 server 端原值（不送空字串覆蓋）
-    // 作法：對未填的 provider 不送 key 欄位，server 收到 undefined 視為不更新
-    // 但 save 端點目前要求 keys 物件 — 這裡採折衷：未填的 provider 若 meta 顯示已有 key、視為「保留」需重送
-    // 為簡化，未填者送空字串 → server 會清空。提示使用者重新填入所有想保留的 key。
-    // 可接受：使用者 UX 即「儲存 = 一次寫入完整當前狀態」
+    // 合併式更新：空欄位 = 沿用 server 端既有的 key，清除 key 一律走「清除」按鈕
     const payload = {
       provider: localProvider.value,
       anthropicKey: localKeys.value.anthropic.trim(),
@@ -118,24 +125,16 @@ async function handleSave() {
       geminiModel: localModels.value.gemini,
     }
     const hasNewKey = !!(payload.anthropicKey || payload.openaiKey || payload.geminiKey)
-    if (!hasNewKey) {
-      // 保留模式：僅更新 provider/models — 但 server 端要求至少一組 key、不能僅更新 meta
-      // 故若使用者未輸入任何新 key 且 server 已有 key，提示需重新輸入或直接拒絕
-      if (!meta?.hasKey) {
-        saveError.value = t('settings.needAtLeastOneKey')
-        return
-      }
-      saveError.value = t('settings.reenterKeysToSave')
-      return
+    // 沒有新 key 也沒有已存 key 時，session 無可更新 — 僅儲存本地偏好設定
+    if (hasNewKey || meta?.hasKey) {
+      const envelope = await encryptPayload(payload)
+      const res = await $fetch<{ ok: true, meta: typeof meta }>('/api/session/save', {
+        method: 'POST',
+        body: envelope,
+      })
+      if (res.meta)
+        settingsStore.applyMeta(res.meta)
     }
-
-    const envelope = await encryptPayload(payload)
-    const res = await $fetch<{ ok: true, meta: typeof meta }>('/api/session/save', {
-      method: 'POST',
-      body: envelope,
-    })
-    if (res.meta)
-      settingsStore.applyMeta(res.meta)
     settingsStore.setProvider(localProvider.value)
     settingsStore.setFetchTime(localFetchTime.value)
     settingsStore.setArticleCount(Number(localArticleCount.value))
@@ -254,52 +253,77 @@ const savedModelLabel = computed(() => {
               <div class="text-caption font-weight-medium text-uppercase tracking-widest text-medium-emphasis mb-2">
                 {{ t('settings.apiKey') }}
               </div>
-              <div
-                v-if="maskedKey"
-                class="font-mono-label text-caption text-medium-emphasis mb-2"
-              >
-                {{ t('settings.currentKey') }}{{ maskedKey }}
-              </div>
-              <div class="d-flex align-center ga-2">
-                <v-text-field
-                  v-model="localKeys[localProvider]"
-                  :type="showKey ? 'text' : 'password'"
-                  :placeholder="currentConfig.keyPlaceholder"
-                  autocomplete="new-password"
-                  name="np-api-key"
-                  density="compact"
-                  variant="outlined"
-                  hide-details
-                  :aria-label="`${currentConfig.label} API Key`"
-                  class="flex-grow-1"
-                  @blur="fetchModels(localProvider, localKeys[localProvider])"
-                >
-                  <template #append-inner>
-                    <v-btn
-                      :icon="showKey ? 'mdi-eye-off' : 'mdi-eye'"
-                      variant="text"
-                      size="x-small"
-                      :aria-label="showKey ? t('settings.hideKey') : t('settings.showKey')"
-                      @click="showKey = !showKey"
-                    />
-                  </template>
-                </v-text-field>
-              </div>
+
+              <!-- 已有儲存的 key：顯示遮罩值與操作，不顯示輸入框 -->
+              <template v-if="maskedKey && !replacingKey">
+                <div class="font-mono-label text-caption text-medium-emphasis mb-2">
+                  {{ t('settings.currentKey') }}{{ maskedKey }}
+                </div>
+                <div class="d-flex align-center ga-2">
+                  <v-btn
+                    size="small"
+                    variant="outlined"
+                    prepend-icon="mdi-pencil-outline"
+                    @click="replacingKey = true"
+                  >
+                    {{ t('settings.replaceKey') }}
+                  </v-btn>
+                  <v-btn
+                    :loading="clearing"
+                    size="small"
+                    variant="text"
+                    color="error"
+                    prepend-icon="mdi-delete-outline"
+                    @click="handleClearSession"
+                  >
+                    {{ t('settings.clearSession') }}
+                  </v-btn>
+                </div>
+              </template>
+
+              <!-- 尚無 key、或按了「更換 Key」：顯示輸入框 -->
+              <template v-else>
+                <div class="d-flex align-center ga-2">
+                  <v-text-field
+                    v-model="localKeys[localProvider]"
+                    :type="showKey ? 'text' : 'password'"
+                    :placeholder="currentConfig.keyPlaceholder"
+                    autocomplete="new-password"
+                    name="np-api-key"
+                    density="compact"
+                    variant="outlined"
+                    hide-details
+                    :aria-label="`${currentConfig.label} API Key`"
+                    class="flex-grow-1"
+                    @blur="fetchModels(localProvider, localKeys[localProvider])"
+                  >
+                    <template #append-inner>
+                      <v-btn
+                        :icon="showKey ? 'mdi-eye-off' : 'mdi-eye'"
+                        variant="text"
+                        size="x-small"
+                        :aria-label="showKey ? t('settings.hideKey') : t('settings.showKey')"
+                        @click="showKey = !showKey"
+                      />
+                    </template>
+                  </v-text-field>
+                  <v-btn
+                    v-if="replacingKey"
+                    size="small"
+                    variant="text"
+                    @click="replacingKey = false; localKeys[localProvider] = ''"
+                  >
+                    {{ t('settings.cancel') }}
+                  </v-btn>
+                </div>
+                <p v-if="replacingKey" class="text-body-small mt-2">
+                  {{ t('settings.replaceKeyHint') }}
+                </p>
+              </template>
+
               <p class="text-body-small mt-2">
                 {{ t('settings.keyStorageNote') }}
               </p>
-              <div v-if="settingsStore.hasApiKey" class="mt-2">
-                <v-btn
-                  :loading="clearing"
-                  size="small"
-                  variant="text"
-                  color="error"
-                  prepend-icon="mdi-delete-outline"
-                  @click="handleClearSession"
-                >
-                  {{ t('settings.clearSession') }}
-                </v-btn>
-              </div>
             </div>
 
             <v-divider class="mb-5" />
@@ -311,13 +335,13 @@ const savedModelLabel = computed(() => {
                   {{ t('settings.summaryModel') }}
                 </div>
                 <v-btn
-                  v-if="localKeys[localProvider]?.trim()"
+                  v-if="localKeys[localProvider]?.trim() || maskedKey"
                   :loading="modelsLoading[localProvider]"
                   icon="mdi-refresh"
                   variant="text"
                   size="x-small"
                   :aria-label="t('settings.refreshModelList')"
-                  @click="fetchModels(localProvider, localKeys[localProvider])"
+                  @click="fetchModels(localProvider, localKeys[localProvider]?.trim() || undefined)"
                 />
               </div>
               <div class="d-flex flex-column ga-2">
@@ -341,14 +365,14 @@ const savedModelLabel = computed(() => {
                     <v-btn
                       size="small"
                       variant="text"
-                      @click="fetchModels(localProvider, localKeys[localProvider])"
+                      @click="fetchModels(localProvider, localKeys[localProvider]?.trim() || undefined)"
                     >
                       {{ t('settings.retry') }}
                     </v-btn>
                   </div>
                 </v-alert>
 
-                <template v-else-if="!localKeys[localProvider]?.trim()">
+                <template v-else-if="!dynamicModels[localProvider].length">
                   <v-card
                     v-if="savedModelLabel"
                     variant="tonal"

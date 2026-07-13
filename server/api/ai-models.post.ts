@@ -1,12 +1,13 @@
 import type { AIProvider } from '~/types/ai'
 import { decryptEnvelope } from '~/server/utils/asymmetric'
+import { readSession } from '~/server/utils/session'
 import { AI_PROVIDERS } from '~/types/ai'
 
 const OPENAI_O_SERIES = /^o\d/
 
 interface ModelsRequestBody {
   provider: AIProvider
-  encrypted: unknown
+  encrypted?: unknown
 }
 
 interface ModelOption {
@@ -23,10 +24,16 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 400, statusMessage: '無效的 provider' })
   }
 
-  const { apiKey: rawKey } = decryptEnvelope<{ apiKey?: string }>(encrypted)
-  const apiKey = rawKey?.trim()
+  // 優先使用 client 加密上傳的新 key；未附帶時退回 session 已儲存的 key，
+  // 讓已存 key 的使用者不必重新輸入即可載入模型清單
+  let apiKey = encrypted
+    ? decryptEnvelope<{ apiKey?: string }>(encrypted).apiKey?.trim()
+    : undefined
   if (!apiKey) {
-    throw createError({ statusCode: 400, statusMessage: '缺少 API Key' })
+    apiKey = readSession(event)?.keys[provider]?.trim()
+  }
+  if (!apiKey) {
+    throw createError({ statusCode: 401, statusMessage: '尚未設定 API Key' })
   }
 
   try {
