@@ -1,6 +1,8 @@
 import type { AIModel, AIProvider } from '@/types/ai'
 import { defineStore } from 'pinia'
+import { CONTENT_CACHE_PREFIXES } from '@/constants'
 import { getEncryptStorage } from '@/plugins/encrypt-storage'
+import { clearLocalStorageCache } from '@/utils/utils'
 
 export type { AIModel, AIProvider }
 export type ThemeName = 'dark' | 'light'
@@ -96,6 +98,8 @@ export const useSettingsStore = defineStore('settings', () => {
     }
     finally {
       sessionMeta.value = null
+      // 以已清除的 key 抓取的內容快取一併移除，避免殘留舊資料
+      CONTENT_CACHE_PREFIXES.forEach(prefix => clearLocalStorageCache(prefix))
     }
   }
 

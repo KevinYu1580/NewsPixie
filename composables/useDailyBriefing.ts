@@ -1,9 +1,9 @@
 import type { Topic } from '@/types/topic'
-import { MAX_CACHE_DAYS } from '@/constants'
+import { DAILY_CACHE_PREFIX, MAX_CACHE_DAYS } from '@/constants'
 import { useSettingsStore } from '@/stores/settingsStore'
 import { getErrorMessage, loadTodayCache, saveTodayCache, todayStr } from '@/utils/utils'
 
-const CACHE_PREFIX = 'newspixie-daily'
+const CACHE_PREFIX = DAILY_CACHE_PREFIX
 
 export interface CuratedArticle {
   title: string
