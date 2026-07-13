@@ -23,6 +23,7 @@
     "needAtLeastOneKey": "Please enter at least one API key",
     "reenterKeysToSave": "To keep existing keys, re-enter them before saving (each save fully overwrites the stored set).",
     "saveError": "Save failed, please try again later",
+    "clearError": "Failed to clear keys, please try again later",
     "autoTriggerTime": "Auto-trigger time",
     "autoTriggerNote": "After the app opens, if the trigger time has passed and today's fetch hasn't run, it will execute once automatically.",
     "articleCount": "Articles per topic (4–10)",
