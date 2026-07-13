@@ -3,6 +3,12 @@ import type { Topic } from '@/types/topic'
 // 快取保留天數
 export const MAX_CACHE_DAYS = 1
 
+// 內容快取 localStorage key prefix（每日精選 / GitHub Trending）
+// 清除 session（清除已儲存的 Key）時會一併清空這些 prefix 底下的所有快取
+export const DAILY_CACHE_PREFIX = 'newspixie-daily'
+export const GITHUB_CACHE_PREFIX = 'newspixie-github'
+export const CONTENT_CACHE_PREFIXES = [DAILY_CACHE_PREFIX, GITHUB_CACHE_PREFIX] as const
+
 // Jina 抓取內容截斷上限（字元數）
 export const MAX_CONTENT_LENGTH = 8000
 

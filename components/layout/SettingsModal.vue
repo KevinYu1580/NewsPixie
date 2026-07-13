@@ -184,7 +184,7 @@ const savedModelLabel = computed(() => {
     @click="openDialog"
   />
 
-  <v-dialog v-model="dialog" max-width="420">
+  <v-dialog v-model="dialog" max-width="420" scrollable>
     <v-card>
       <v-card-title class="font-mono-label text-sm tracking-widest text-uppercase pt-5 px-5">
         {{ t('settings.title') }}
@@ -195,7 +195,7 @@ const savedModelLabel = computed(() => {
         density="compact"
         color="np-accent"
         grow
-        class="px-5"
+        class="px-5 flex-shrink-0"
       >
         <v-tab value="ai">
           {{ t('settings.tabAi') }}

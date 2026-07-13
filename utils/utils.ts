@@ -91,6 +91,19 @@ export function pruneLocalStorageCache(prefix: string, maxDays: number): void {
   keysToRemove.forEach(k => localStorage.removeItem(k))
 }
 
+/** 清除所有以 prefix 開頭的 localStorage 快取（不論日期） */
+export function clearLocalStorageCache(prefix: string): void {
+  if (typeof window === 'undefined')
+    return
+  const keysToRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key?.startsWith(prefix))
+      keysToRemove.push(key)
+  }
+  keysToRemove.forEach(k => localStorage.removeItem(k))
+}
+
 /** 讀取當日 localStorage 快取（key：`{prefix}-{topicId}-{YYYY-MM-DD}`） */
 export function loadTodayCache<T>(prefix: string, topicId: string): T | null {
   if (typeof window === 'undefined')
