@@ -23,6 +23,7 @@
     "needAtLeastOneKey": "請至少輸入一組 API Key",
     "reenterKeysToSave": "為保留現有 Key、請重新輸入該 provider 的 Key 後再儲存（一次提交即一次完整覆寫）",
     "saveError": "儲存失敗，請稍後再試",
+    "clearError": "清除 Key 失敗，請稍後再試",
     "autoTriggerTime": "自動觸發時間",
     "autoTriggerNote": "App 開啟後若已過觸發時間且當日尚未抓取，將自動執行一次。",
     "articleCount": "精選篇數（4–10）",

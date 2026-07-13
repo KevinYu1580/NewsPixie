@@ -93,14 +93,13 @@ export const useSettingsStore = defineStore('settings', () => {
   }
 
   async function clearSession() {
-    try {
-      await $fetch('/api/session/clear', { method: 'POST' })
-    }
-    finally {
-      sessionMeta.value = null
-      // 以已清除的 key 抓取的內容快取一併移除，避免殘留舊資料
-      CONTENT_CACHE_PREFIXES.forEach(prefix => clearLocalStorageCache(prefix))
-    }
+    // 失敗時直接拋出讓 UI 顯示錯誤，不可在清除失敗時仍將本地狀態歸零
+    // （否則 cookie 仍在、重新整理後 key 會「復活」，使用者卻以為已刪除）
+    await $fetch('/api/session/clear', { method: 'POST' })
+    // 以 cookie 實際狀態為準：刪除成功時為 null；若瀏覽器端 cookie 未被刪除則如實呈現
+    sessionMeta.value = readMetaCookie()
+    // 以已清除的 key 抓取的內容快取一併移除，避免殘留舊資料
+    CONTENT_CACHE_PREFIXES.forEach(prefix => clearLocalStorageCache(prefix))
   }
 
   /**

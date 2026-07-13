@@ -157,6 +157,9 @@ async function handleClearSession() {
     await settingsStore.clearSession()
     syncLocalSettings()
   }
+  catch (e: unknown) {
+    saveError.value = getErrorMessage(e) || t('settings.clearError')
+  }
   finally {
     clearing.value = false
   }
@@ -262,6 +265,8 @@ const savedModelLabel = computed(() => {
                   v-model="localKeys[localProvider]"
                   :type="showKey ? 'text' : 'password'"
                   :placeholder="currentConfig.keyPlaceholder"
+                  autocomplete="new-password"
+                  name="np-api-key"
                   density="compact"
                   variant="outlined"
                   hide-details
