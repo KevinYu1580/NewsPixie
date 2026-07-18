@@ -103,7 +103,7 @@
 - **AI 供應商抽象層**:統一的 client 介面支援 Anthropic / OpenAI / Gemini 三家 REST API
 - **Mock 模式**:單一環境變數切換為全套假資料,方便展示與測試
 
-> 完整系統架構、加密流程與資料流細節請見 [arc24.md](arc24.md)。
+> 完整系統架構、加密流程與資料流細節請見 [arc24.md](docs/arc24.md)。
 
 ---
 
