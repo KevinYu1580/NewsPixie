@@ -17,6 +17,9 @@ const isBookmarked = computed(() =>
   props.article ? bookmarksStore.isArticleBookmarked(props.article.url) : false,
 )
 
+const DEFAULT_NEWS_IMAGE = '/news-placeholder.svg'
+const imageSrc = computed(() => props.article?.imageUrl || DEFAULT_NEWS_IMAGE)
+
 function toggleBookmark() {
   if (!props.article || !props.topicId || !props.topicName)
     return
@@ -47,8 +50,7 @@ function getHostname(url: string): string {
         <!-- CuratedArticle 模式 -->
         <template v-if="article">
           <v-img
-            v-if="article.imageUrl"
-            :src="article.imageUrl"
+            :src="imageSrc"
             :alt="article.title"
             height="260"
 
