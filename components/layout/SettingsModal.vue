@@ -470,6 +470,7 @@ const savedModelLabel = computed(() => {
         </v-btn>
         <v-btn
           variant="flat"
+          color="primary"
           :loading="saving"
           @click="handleSave"
         >

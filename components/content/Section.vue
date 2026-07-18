@@ -19,7 +19,7 @@ const { t } = useI18n()
     <!-- 標題列 -->
     <div class="d-flex align-center ga-2 w-100 mb-3">
       <button
-        class="d-flex align-center ga-2 flex-grow-1 text-left"
+        class="np-section-toggle d-flex align-center ga-2 flex-grow-1 text-left"
         :aria-expanded="!collapsed"
         @click="collapsed = !collapsed"
       >

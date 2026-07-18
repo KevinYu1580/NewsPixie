@@ -269,6 +269,7 @@ function handleSubmit() {
         <v-btn
           type="submit"
           variant="flat"
+          color="primary"
           :disabled="!name.trim()"
         >
           {{ submitLabel ?? t('topicForm.save') }}

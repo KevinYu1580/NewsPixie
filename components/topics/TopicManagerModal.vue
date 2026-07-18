@@ -249,7 +249,7 @@ function saveChanges() {
         <v-btn variant="text" @click="closeDialog">
           {{ t('topicManager.cancel') }}
         </v-btn>
-        <v-btn variant="flat" @click="saveChanges">
+        <v-btn variant="flat" color="primary" @click="saveChanges">
           {{ t('topicManager.save') }}
         </v-btn>
       </v-card-actions>

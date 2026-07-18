@@ -17,12 +17,12 @@ export interface Topic {
 export type TopicColor = 'violet' | 'indigo' | 'blue' | 'cyan' | 'emerald' | 'orange' | 'rose' | 'red'
 
 export const TOPIC_COLORS: Record<TopicColor, { vuetifyColor: string, hex: string }> = {
-  violet: { vuetifyColor: 'deep-purple-lighten-2', hex: '#9575CD' },
-  indigo: { vuetifyColor: 'indigo-lighten-2', hex: '#7986CB' },
-  blue: { vuetifyColor: 'blue-lighten-2', hex: '#64B5F6' },
-  cyan: { vuetifyColor: 'cyan-lighten-2', hex: '#4DD0E1' },
-  emerald: { vuetifyColor: 'teal-lighten-2', hex: '#4DB6AC' },
-  orange: { vuetifyColor: 'orange-lighten-2', hex: '#FFB74D' },
-  rose: { vuetifyColor: 'pink-lighten-2', hex: '#F48FB1' },
-  red: { vuetifyColor: 'red-lighten-2', hex: '#EF9A9A' },
+  violet: { vuetifyColor: 'deep-purple-lighten-2', hex: '#8B8FE8' },
+  indigo: { vuetifyColor: 'indigo-lighten-2', hex: '#7A8CE0' },
+  blue: { vuetifyColor: 'blue-lighten-2', hex: '#6FA8E8' },
+  cyan: { vuetifyColor: 'cyan-lighten-2', hex: '#5FC2D6' },
+  emerald: { vuetifyColor: 'teal-lighten-2', hex: '#55C0A8' },
+  orange: { vuetifyColor: 'orange-lighten-2', hex: '#E8A552' },
+  rose: { vuetifyColor: 'pink-lighten-2', hex: '#E88BA8' },
+  red: { vuetifyColor: 'red-lighten-2', hex: '#E57882' },
 }
